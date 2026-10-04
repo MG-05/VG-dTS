@@ -1,0 +1,284 @@
+{
+  "config": {
+    "horizon": 5000,
+    "eval_runs": 1,
+    "seed": 999,
+    "mode": "fixed_quick_vgdts_v3"
+  },
+  "ranked_avg": [
+    {
+      "algorithm": "D-UCB (0805.3415)",
+      "avg_final_normalized_regret": 0.11124428969738945
+    },
+    {
+      "algorithm": "D-LinUCB one-hot (1909.09146)",
+      "avg_final_normalized_regret": 0.11869428969738946
+    },
+    {
+      "algorithm": "Global-CTS (1302.3721)",
+      "avg_final_normalized_regret": 0.12179428969738947
+    },
+    {
+      "algorithm": "SW-UCB (0805.3415)",
+      "avg_final_normalized_regret": 0.12554428969738946
+    },
+    {
+      "algorithm": "SW-TS (Trovo 2020)",
+      "avg_final_normalized_regret": 0.15726928969738949
+    },
+    {
+      "algorithm": "Beta-SWTS",
+      "avg_final_normalized_regret": 0.15884428969738945
+    },
+    {
+      "algorithm": "gamma-SWGTS (2409.05181)",
+      "avg_final_normalized_regret": 0.16256928969738946
+    },
+    {
+      "algorithm": "GLR-klUCB (1902.01575)",
+      "avg_final_normalized_regret": 0.16651928969738944
+    },
+    {
+      "algorithm": "dOTS",
+      "avg_final_normalized_regret": 0.1761692896973895
+    },
+    {
+      "algorithm": "CUSUM-UCB (1711.03539)",
+      "avg_final_normalized_regret": 0.17751928969738945
+    },
+    {
+      "algorithm": "VG-dTS",
+      "avg_final_normalized_regret": 0.18196928969738946
+    },
+    {
+      "algorithm": "dTS",
+      "avg_final_normalized_regret": 0.20309428969738946
+    },
+    {
+      "algorithm": "AdaSwitch (1902.07010)",
+      "avg_final_normalized_regret": 0.20481928969738944
+    },
+    {
+      "algorithm": "Dynamic TS",
+      "avg_final_normalized_regret": 0.20899428969738942
+    },
+    {
+      "algorithm": "REXP3",
+      "avg_final_normalized_regret": 0.2254942896973895
+    },
+    {
+      "algorithm": "TS",
+      "avg_final_normalized_regret": 0.2263942896973895
+    }
+  ],
+  "summary": {
+    "VG-dTS": {
+      "per_env": {
+        "slow": 0.22775667711659334,
+        "fast": 0.2638322146546958,
+        "abrupt": 0.14600000000000204,
+        "mixed": 0.1854007955448151,
+        "random_breakpoints": 0.16933233011952697,
+        "random_drift": 0.10101775021474087,
+        "global_switching": 0.1832229527606155,
+        "per_arm_switching": 0.1791915971681261
+      },
+      "avg_final_normalized_regret": 0.18196928969738946
+    },
+    "dTS": {
+      "per_env": {
+        "slow": 0.25115667711659334,
+        "fast": 0.27383221465469576,
+        "abrupt": 0.17160000000000206,
+        "mixed": 0.2010007955448151,
+        "random_breakpoints": 0.19353233011952697,
+        "random_drift": 0.14901775021474087,
+        "global_switching": 0.2022229527606155,
+        "per_arm_switching": 0.1823915971681261
+      },
+      "avg_final_normalized_regret": 0.20309428969738946
+    },
+    "dOTS": {
+      "per_env": {
+        "slow": 0.19455667711659336,
+        "fast": 0.23263221465469577,
+        "abrupt": 0.15280000000000205,
+        "mixed": 0.18140079554481509,
+        "random_breakpoints": 0.17113233011952697,
+        "random_drift": 0.12701775021474088,
+        "global_switching": 0.1826229527606155,
+        "per_arm_switching": 0.1671915971681261
+      },
+      "avg_final_normalized_regret": 0.1761692896973895
+    },
+    "TS": {
+      "per_env": {
+        "slow": 0.2689566771165933,
+        "fast": 0.4670322146546958,
+        "abrupt": 0.16060000000000205,
+        "mixed": 0.14740079554481508,
+        "random_breakpoints": 0.19393233011952699,
+        "random_drift": 0.09641775021474086,
+        "global_switching": 0.2590229527606155,
+        "per_arm_switching": 0.2177915971681261
+      },
+      "avg_final_normalized_regret": 0.2263942896973895
+    },
+    "REXP3": {
+      "per_env": {
+        "slow": 0.24415667711659333,
+        "fast": 0.44323221465469576,
+        "abrupt": 0.20580000000000204,
+        "mixed": 0.18900079554481508,
+        "random_breakpoints": 0.17893233011952697,
+        "random_drift": 0.11681775021474086,
+        "global_switching": 0.2310229527606155,
+        "per_arm_switching": 0.1949915971681261
+      },
+      "avg_final_normalized_regret": 0.2254942896973895
+    },
+    "Dynamic TS": {
+      "per_env": {
+        "slow": 0.27315667711659336,
+        "fast": 0.44863221465469577,
+        "abrupt": 0.17980000000000204,
+        "mixed": 0.13360079554481508,
+        "random_breakpoints": 0.13913233011952697,
+        "random_drift": 0.09981775021474086,
+        "global_switching": 0.2016229527606155,
+        "per_arm_switching": 0.1961915971681261
+      },
+      "avg_final_normalized_regret": 0.20899428969738942
+    },
+    "SW-UCB (0805.3415)": {
+      "per_env": {
+        "slow": 0.06695667711659335,
+        "fast": 0.3068322146546958,
+        "abrupt": 0.16620000000000204,
+        "mixed": 0.10000079554481509,
+        "random_breakpoints": 0.07493233011952698,
+        "random_drift": 0.061017750214740867,
+        "global_switching": 0.1344229527606155,
+        "per_arm_switching": 0.0939915971681261
+      },
+      "avg_final_normalized_regret": 0.12554428969738946
+    },
+    "D-UCB (0805.3415)": {
+      "per_env": {
+        "slow": 0.11415667711659334,
+        "fast": 0.14643221465469577,
+        "abrupt": 0.08580000000000204,
+        "mixed": 0.11600079554481509,
+        "random_breakpoints": 0.10533233011952697,
+        "random_drift": 0.09461775021474086,
+        "global_switching": 0.1170229527606155,
+        "per_arm_switching": 0.1105915971681261
+      },
+      "avg_final_normalized_regret": 0.11124428969738945
+    },
+    "CUSUM-UCB (1711.03539)": {
+      "per_env": {
+        "slow": 0.17275667711659334,
+        "fast": 0.39383221465469576,
+        "abrupt": 0.18680000000000205,
+        "mixed": 0.11480079554481508,
+        "random_breakpoints": 0.10553233011952698,
+        "random_drift": 0.09041775021474087,
+        "global_switching": 0.20562295276061548,
+        "per_arm_switching": 0.1503915971681261
+      },
+      "avg_final_normalized_regret": 0.17751928969738945
+    },
+    "GLR-klUCB (1902.01575)": {
+      "per_env": {
+        "slow": 0.05975667711659335,
+        "fast": 0.36143221465469577,
+        "abrupt": 0.29100000000000203,
+        "mixed": 0.13280079554481508,
+        "random_breakpoints": 0.10033233011952698,
+        "random_drift": 0.06861775021474087,
+        "global_switching": 0.1538229527606155,
+        "per_arm_switching": 0.1643915971681261
+      },
+      "avg_final_normalized_regret": 0.16651928969738944
+    },
+    "AdaSwitch (1902.07010)": {
+      "per_env": {
+        "slow": 0.11255667711659334,
+        "fast": 0.4212322146546958,
+        "abrupt": 0.32040000000000207,
+        "mixed": 0.07780079554481509,
+        "random_breakpoints": 0.15593233011952698,
+        "random_drift": 0.14081775021474086,
+        "global_switching": 0.2342229527606155,
+        "per_arm_switching": 0.1755915971681261
+      },
+      "avg_final_normalized_regret": 0.20481928969738944
+    },
+    "SW-TS (Trovo 2020)": {
+      "per_env": {
+        "slow": 0.06935667711659335,
+        "fast": 0.4294322146546958,
+        "abrupt": 0.19160000000000205,
+        "mixed": 0.09100079554481508,
+        "random_breakpoints": 0.09173233011952697,
+        "random_drift": 0.060017750214740866,
+        "global_switching": 0.1760229527606155,
+        "per_arm_switching": 0.1489915971681261
+      },
+      "avg_final_normalized_regret": 0.15726928969738949
+    },
+    "gamma-SWGTS (2409.05181)": {
+      "per_env": {
+        "slow": 0.07415667711659335,
+        "fast": 0.4314322146546958,
+        "abrupt": 0.19100000000000206,
+        "mixed": 0.08160079554481509,
+        "random_breakpoints": 0.09193233011952698,
+        "random_drift": 0.08441775021474086,
+        "global_switching": 0.1822229527606155,
+        "per_arm_switching": 0.1637915971681261
+      },
+      "avg_final_normalized_regret": 0.16256928969738946
+    },
+    "Global-CTS (1302.3721)": {
+      "per_env": {
+        "slow": 0.08275667711659335,
+        "fast": 0.2254322146546958,
+        "abrupt": 0.12760000000000205,
+        "mixed": 0.09640079554481508,
+        "random_breakpoints": 0.09673233011952698,
+        "random_drift": 0.08741775021474087,
+        "global_switching": 0.1336229527606155,
+        "per_arm_switching": 0.1243915971681261
+      },
+      "avg_final_normalized_regret": 0.12179428969738947
+    },
+    "D-LinUCB one-hot (1909.09146)": {
+      "per_env": {
+        "slow": 0.14215667711659336,
+        "fast": 0.13003221465469578,
+        "abrupt": 0.08640000000000204,
+        "mixed": 0.1448007955448151,
+        "random_breakpoints": 0.12793233011952698,
+        "random_drift": 0.08821775021474086,
+        "global_switching": 0.1192229527606155,
+        "per_arm_switching": 0.1107915971681261
+      },
+      "avg_final_normalized_regret": 0.11869428969738946
+    },
+    "Beta-SWTS": {
+      "per_env": {
+        "slow": 0.07455667711659335,
+        "fast": 0.42303221465469576,
+        "abrupt": 0.19680000000000206,
+        "mixed": 0.09740079554481508,
+        "random_breakpoints": 0.07893233011952698,
+        "random_drift": 0.06881775021474086,
+        "global_switching": 0.1838229527606155,
+        "per_arm_switching": 0.1473915971681261
+      },
+      "avg_final_normalized_regret": 0.15884428969738945
+    }
+  }
+}

@@ -1,1 +1,1 @@
-# VG-dTS
+# Adaptive-Discounted-Thompson-Sampling

@@ -1,0 +1,279 @@
+\section{Notations}
+\begin{table}[!htbp]
+\centering
+\normalsize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{ll}
+\toprule
+Symbol & Meaning \\
+\midrule
+$K,T$ & Number of arms and horizon \\
+$A_t,R_t$ & Played arm and observed Bernoulli reward at round $t$ \\
+$(\alpha_k,\beta_k)$ & Beta posterior parameters for arm $k$ \\
+$\bar{\mu}_{k,t},\widetilde{\mu}_{k,t}$ & Posterior mean and Thompson sample \\
+$s_t$ & Standardized surprise for the played arm \\
+$(m_k,v_k),\nu_{k,t}$ & EWMA surprise states and volatility proxy \\
+$\gamma^{\mathrm{vol}}_{k,t},\gamma_{k,t}$ & Volatility-based and final discounts \\
+$n^{\mathrm{eff}}_{k,t},w_{k,t}$ & Effective sample size and reliability-gate weight \\
+\bottomrule
+\end{tabular}
+\caption{Core notation used throughout the VG-dTS method description.}
+\label{tab:notation_summary}
+\end{table}
+
+\section{Beta--Bernoulli Conjugacy Derivation}
+\label{app:beta_conjugacy}
+Fix one arm $k$ with unknown success probability $\mu_k=\theta$. Suppose we observe $S$ successes and $F$ failures from pulls of that arm. The Bernoulli likelihood is
+\[
+p(\text{data}\mid \theta)\propto \theta^{S}(1-\theta)^{F}.
+\]
+With Beta prior $\theta\sim\mathrm{Beta}(\alpha,\beta)$,
+\[
+p(\theta)\propto \theta^{\alpha-1}(1-\theta)^{\beta-1}.
+\]
+By Bayes' rule,
+\[
+p(\theta\mid \text{data})\propto p(\text{data}\mid \theta)\,p(\theta)
+\propto \theta^{\alpha+S-1}(1-\theta)^{\beta+F-1}.
+\]
+Therefore the posterior remains Beta:
+\begin{equation}
+\mu_k \mid \text{data} \sim \mathrm{Beta}(\alpha+S,\beta+F).
+\end{equation}
+
+\section{Variance-Gated Discounted Thompson Sampling (VG-dTS)}
+\label{app:vgdts}
+
+This appendix introduces the modeling choices behind VG-dTS, explains surprise, EWMA volatility, mapping, and gating, and provides explicit equations and pseudocode for all subroutines used in Algorithm~\ref{alg:vgdts}.
+
+\subsection{Bernoulli bandits and Beta--Bernoulli posteriors}
+We consider $K$ arms over $T$ rounds. When the learner plays arm $A_t\in[K]$ at round $t$, it observes a binary reward
+\[
+R_t \in\{0,1\},\qquad \mathbb{P}(R_t=1\mid A_t=k)=\mu_{k,t},
+\]
+where the mean $\mu_{k,t}\in[0,1]$ may change over time (non-stationary setting).
+
+\paragraph{Bayesian belief per arm.}
+For each arm $k$, we maintain a Beta belief $\mu_{k,t}\sim\mathrm{Beta}(\alpha_{k,t},\beta_{k,t})$.
+The posterior mean (our probability prediction under this model) is
+\begin{equation}
+\bar{\mu}_{k,t} \triangleq \mathbb{E}[\mu_{k,t}\mid \text{history}] = \frac{\alpha_{k,t}}{\alpha_{k,t}+\beta_{k,t}}.
+\label{eq:apx_postmean}
+\end{equation}
+Under standard stationary Beta--Bernoulli conjugacy, after observing a Bernoulli outcome $R_t$ from arm $k$, the posterior update is
+\begin{equation}
+(\alpha_{k},\beta_{k}) \leftarrow (\alpha_{k}+R_t,\ \beta_{k}+1-R_t).
+\label{eq:apx_conjugate}
+\end{equation}
+Thompson Sampling (TS) samples a candidate mean from each posterior and selects the arm with the largest sample.
+
+\paragraph{Why non-stationarity needs forgetting.}
+If $\mu_{k,t}$ changes, very old observations can become misleading. A non-stationary algorithm therefore needs a mechanism to \emph{retain useful recent history while forgetting stale evidence}.
+VG-dTS implements this via an \emph{adaptive discount} that becomes stronger when the arm appears unstable.
+
+\subsection{Discounting as controlled forgetting (and effective sample size)}
+A common strategy in non-stationary bandits is \emph{discounting}: shrink accumulated evidence toward a base prior so that recent data has larger influence.
+
+\paragraph{Prior-preserving discount.}
+VG-dTS uses the ``prior-preserving'' discount transformation
+\begin{equation}
+\alpha_k \leftarrow 1+\gamma(\alpha_k-1),\qquad
+\beta_k \leftarrow 1+\gamma(\beta_k-1),
+\label{eq:apx_discount}
+\end{equation}
+where $\gamma\in(0,1]$ is the discount factor. This choice has an important property:
+$\mathrm{Beta}(1,1)$ is a fixed point, since $\alpha=\beta=1$ implies no change after discounting.
+Intuitively, the transformation scales the pseudo-count evidence $(\alpha_k-1,\beta_k-1)$ by $\gamma$.
+
+\paragraph{Effective sample size.}
+A useful summary of how much evidence the posterior contains is
+\begin{equation}
+n^{\mathrm{eff}}_k \triangleq (\alpha_k-1)+(\beta_k-1)=\alpha_k+\beta_k-2,
+\label{eq:apx_neff}
+\end{equation}
+often called \emph{effective sample size} (pseudo-count total).
+Large $n^{\mathrm{eff}}_k$ means the posterior is concentrated and stable; small $n^{\mathrm{eff}}_k$ means high uncertainty.
+
+\subsection{Standardized surprise: a robust change signal}
+VG-dTS estimates instability from \emph{prediction errors}.
+Let $A_t$ be the played arm at time $t$, and let $p_t$ denote the current predicted success probability for that arm:
+\[
+p_t \triangleq \bar{\mu}_{A_t,t}.
+\]
+We compare the observed outcome to this prediction. In the Bernoulli case, the natural observation is $x_t=R_t$.
+In some applications (e.g., finance), one may additionally track a real-valued \emph{proxy} $x_t$ (e.g., return) to measure prediction error, while still updating the Beta posterior using $R_t$; VG-dTS supports both.
+
+A raw error $|x_t-p_t|$ is not comparable across regimes: when $p_t\approx 0.5$ the observation is inherently noisy, but when $p_t\approx 0.99$ even one failure is highly informative.
+Therefore, VG-dTS uses a \emph{standardized} error by dividing by a predicted noise scale.
+For Bernoulli rewards the natural scale is $\sqrt{p_t(1-p_t)}$.
+
+Two practical issues motivate clipping:
+(i) when $p_t$ is near $0$ or $1$, $p_t(1-p_t)$ is tiny and the standardized error can explode;
+(ii) occasional outliers should not dominate the volatility estimate.
+Clipping enforces robustness and numerical stability.
+
+\paragraph{Definition.}
+Let $b\in\{0,1\}$ denote the surprise mode flag:
+\[
+e_t^{(b)} \triangleq
+\begin{cases}
+|x_t-p_t|, & b=0 \quad \text{(two-sided)},\\
+\max\{p_t-x_t,0\}, & b=1 \quad \text{(downside-only)}.
+\end{cases}
+\]
+Then define
+\begin{equation}
+d_t \triangleq \sqrt{\max\{p_t(1-p_t),\epsilon\}},\qquad
+s_t \triangleq \mathrm{clip}\!\left(\frac{e_t^{(b)}}{d_t},\,0,\,c\right),
+\label{eq:apx_surprise}
+\end{equation}
+with $\epsilon>0$ and clip level $c>0$.
+
+In VG-dTS, after selecting $A_t$ and computing the predictive mean $p_t=\bar{\mu}_{A_t,t}$, we compute the surprise scalar
+$
+s_t \;=\; \texttt{StdSurprise}(x_t,p_t;\epsilon,c,b),
+$
+which is then fed into the EWMA volatility update \eqref{eq:apx_ewma}. Algorithm~\ref{alg:apx_stdsurprise} gives the exact routine.
+
+\begin{algorithm}[t]
+\caption{\texttt{StdSurprise}$(x,p;\epsilon,c,b)$: standardized and clipped prediction error}
+\label{alg:apx_stdsurprise}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} observation $x$ (reward or proxy), predicted mean $p\in[0,1]$, $\epsilon>0$, clip $c>0$, flag $b\in\{0,1\}$
+\STATE $d \leftarrow \sqrt{\max\{p(1-p),\,\epsilon\}}$ \hfill (predicted noise scale)
+\IF{$b=1$}
+    \STATE $e \leftarrow \max\{p-x,0\}$ \hfill (downside-only error)
+\ELSE
+    \STATE $e \leftarrow |x-p|$ \hfill (two-sided error)
+\ENDIF
+\STATE $s \leftarrow e/d$ \hfill (standardized error)
+\STATE \textbf{Return} $\mathrm{clip}(s,0,c)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{EWMA volatility proxy: tracking recent instability}
+A single surprise value is noisy. VG-dTS therefore maintains an online estimate of how large/variable surprises have been recently, using EWMA statistics.
+
+For a sequence $\{y_t\}$, an EWMA mean $m_t$ satisfies
+\[
+m_t=\lambda m_{t-1}+(1-\lambda)y_t,\qquad \lambda\in[0,1).
+\]
+Recent observations receive weight $(1-\lambda)$, and older observations receive exponentially decaying weights. Larger $\lambda$ produces smoother (slower) tracking; smaller $\lambda$ is more reactive.
+
+VG-dTS maintains for each arm $k$ two state variables: a mean-like statistic $m_k$ and a variance-like statistic $v_k$ for surprise.
+Only the \emph{played arm} is updated each round (since only it is observed). As in the implementation, we first update the EWMA mean and then use this updated value in the variance update:
+\begin{equation}
+\widetilde{m}_{A_t} \leftarrow \lambda m_{A_t} + (1-\lambda)s_t,\qquad
+v_{A_t} \leftarrow \lambda v_{A_t} + (1-\lambda)\bigl(s_t-\widetilde{m}_{A_t}\bigr)^2,\qquad
+m_{A_t}\leftarrow \widetilde{m}_{A_t}.
+\label{eq:apx_ewma}
+\end{equation}
+We then define the \emph{volatility proxy} for each arm as
+\begin{equation}
+\nu_{k,t}\triangleq \sqrt{\max\{v_k,0\}}.
+\label{eq:apx_volproxy}
+\end{equation}
+Intuitively, $\nu_{k,t}$ increases when recent surprises are persistently large or fluctuate strongly, which is consistent with drifting means or regime changes.
+
+\subsection{From volatility to discount: two monotone mappings}
+VG-dTS converts the nonnegative volatility proxy $\nu$ into a bounded discount candidate
+\[
+\gamma^{\mathrm{vol}}(\nu)\in[\gamma_{\min},\gamma_{\max}],\qquad 0<\gamma_{\min}\le \gamma_{\max}\le 1,
+\]
+with the monotone principle:
+\[
+\text{larger }\nu \Rightarrow \text{smaller }\gamma^{\mathrm{vol}}(\nu)\Rightarrow \text{faster forgetting}.
+\]
+These mappings are not derived from a single theorem; they are \emph{design choices} that enforce boundedness, monotonicity, and interpretability.
+
+\paragraph{Inverse-linear mapping (threshold-like).}
+Choose two reference levels $\nu_{\mathrm{low}}<\nu_{\mathrm{high}}$.
+Volatility below $\nu_{\mathrm{low}}$ is treated as ``stable'' ($\gamma\approx\gamma_{\max}$);
+above $\nu_{\mathrm{high}}$ is treated as ``unstable'' ($\gamma\approx\gamma_{\min}$);
+between them we interpolate linearly:
+\begin{equation}
+z \triangleq \mathrm{clip}\!\left(\frac{\nu-\nu_{\mathrm{low}}}{\max\{\nu_{\mathrm{high}}-\nu_{\mathrm{low}},\epsilon\}},\,0,\,1\right),\qquad
+\gamma^{\mathrm{vol}}(\nu)\triangleq \gamma_{\max}-z(\gamma_{\max}-\gamma_{\min}).
+\label{eq:apx_map_linear}
+\end{equation}
+
+\paragraph{Logistic mapping (smooth transition).}
+Choose a midpoint $\nu_{\mathrm{mid}}$ and slope $s_{\log}>0$.
+The logistic map behaves like a smooth threshold around $\nu_{\mathrm{mid}}$: stable regions stay near $\gamma_{\max}$, then $\gamma$ drops rapidly near the midpoint and saturates near $\gamma_{\min}$ for large $\nu$:
+\begin{equation}
+u \triangleq \mathrm{clip}\!\left(s_{\log}(\nu-\nu_{\mathrm{mid}}),\, -60,\, 60\right),\qquad
+\gamma^{\mathrm{vol}}(\nu)\triangleq \gamma_{\min}+\frac{\gamma_{\max}-\gamma_{\min}}{1+e^{u}}.
+\label{eq:apx_map_logistic}
+\end{equation}
+The clip on $u$ is purely for numerical stability of $\exp(u)$.
+
+In the algorithm, once $\nu_{k,t}$ is available (Eq.~\eqref{eq:apx_volproxy}), VG-dTS converts it into a discount candidate by calling
+\[
+\gamma^{\mathrm{vol}}_{k,t} \;=\; \texttt{MapToDiscount}(\nu_{k,t};\gamma_{\min},\gamma_{\max},\texttt{mode},\texttt{params}).
+\]
+Algorithm~\ref{alg:apx_maptodiscount} specifies both supported mappings and enforces the bounds $\gamma^{\mathrm{vol}}_{k,t}\in[\gamma_{\min},\gamma_{\max}]$.
+
+\begin{algorithm}[t]
+\caption{\texttt{MapToDiscount}$(\nu;\gamma_{\min},\gamma_{\max},\texttt{mode},\texttt{params})$}
+\label{alg:apx_maptodiscount}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} volatility proxy $\nu\ge 0$, bounds $(\gamma_{\min},\gamma_{\max})$, mode, params, $\epsilon>0$
+\IF{\texttt{mode} = \texttt{inverse\_linear}}
+    \STATE \textbf{Params:} $\nu_{\mathrm{low}},\nu_{\mathrm{high}}$ with $\nu_{\mathrm{high}}>\nu_{\mathrm{low}}$
+    \STATE $z \leftarrow \mathrm{clip}\!\left(\frac{\nu-\nu_{\mathrm{low}}}{\max\{\nu_{\mathrm{high}}-\nu_{\mathrm{low}},\epsilon\}},\,0,\,1\right)$
+    \STATE $\gamma \leftarrow \gamma_{\max}-z(\gamma_{\max}-\gamma_{\min})$
+\ELSE
+    \STATE \textbf{Mode:} \texttt{logistic}
+    \STATE \textbf{Params:} $\nu_{\mathrm{mid}}$, $s_{\log}>0$
+    \STATE $u \leftarrow \mathrm{clip}\!\left(s_{\log}(\nu-\nu_{\mathrm{mid}}),\, -60,\, 60\right)$
+    \STATE $\gamma \leftarrow \gamma_{\min}+\frac{\gamma_{\max}-\gamma_{\min}}{1+e^{u}}$
+\ENDIF
+\STATE \textbf{Return} $\mathrm{clip}(\gamma,\gamma_{\min},\gamma_{\max})$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Reliability gate: when to trust volatility}
+A volatility estimate is unreliable when an arm has been pulled only a few times. Without protection, the algorithm may overreact to noise and ``forget'' too aggressively.
+VG-dTS addresses this with a \emph{reliability gate} based on effective sample size.
+
+For each arm, define
+\[
+n^{\mathrm{eff}}_{k,t}\triangleq \max\{\alpha_k+\beta_k-2,0\}.
+\]
+Then define a weight $w_{k,t}\in[0,1]$ by
+\begin{equation}
+w_{k,t}\triangleq
+\begin{cases}
+\frac{n^{\mathrm{eff}}_{k,t}}{n^{\mathrm{eff}}_{k,t}+n_0}, & n_0>0,\\
+\mathbb{I}\{n^{\mathrm{eff}}_{k,t}>0\}, & n_0=0,
+\end{cases}
+\label{eq:apx_gate}
+\end{equation}
+where $n_0\ge 0$ controls how quickly the gate opens:
+small $n_0$ trusts volatility earlier; large $n_0$ delays volatility-driven adaptation.
+
+The final discount is a convex combination of a conservative default $\gamma_{\mathrm{def}}$ and the volatility-based candidate:
+\begin{equation}
+\gamma_{k,t}\triangleq \mathrm{clip}\!\left((1-w_{k,t})\gamma_{\mathrm{def}}+w_{k,t}\gamma^{\mathrm{vol}}_{k,t},\ \gamma_{\min},\ \gamma_{\max}\right).
+\label{eq:apx_gamma_mix}
+\end{equation}
+This ensures VG-dTS behaves like a stable discounted TS variant early on, and gradually transitions to volatility-driven discounting once there is sufficient evidence.
+
+\subsection{Putting everything together}
+In conclusion, at each round $t$, VG-dTS first performs Thompson-style action selection by sampling $\widetilde{\mu}_{k,t}\sim \mathrm{Beta}(\alpha_k,\beta_k)$ for each arm and choosing an action $A_t$ with the largest score (optionally using the optimistic score $\theta_{k,t}=\max\{\widetilde{\mu}_{k,t},\bar{\mu}_{k,t}\}$).
+After observing the binary reward $R_t\in\{0,1\}$, the algorithm forms a predictive probability $p_t=\bar{\mu}_{A_t,t}$ for the played arm and computes a standardized prediction error by calling
+$s_t=\texttt{StdSurprise}(x_t,p_t;\epsilon,c,b)$ as specified in Algorithm~\ref{alg:apx_stdsurprise}, where $x_t=R_t$ in the Bernoulli setting.
+This surprise value is then used to update the EWMA volatility statistics of the played arm via \eqref{eq:apx_ewma}, and the resulting per-arm volatility proxy is defined as $\nu_{k,t}=\sqrt{\max\{v_k,0\}}$.
+Given $\nu_{k,t}$, VG-dTS obtains an arm-wise discount candidate by calling $\gamma^{\mathrm{vol}}_{k,t}=\texttt{MapToDiscount}(\nu_{k,t};\gamma_{\min},\gamma_{\max},\texttt{mode},\texttt{params})$, as specified in Algorithm~\ref{alg:apx_maptodiscount}.
+To avoid overreacting when an arm has little data, the algorithm computes an effective sample size $n^{\mathrm{eff}}_{k,t}=\max\{\alpha_k+\beta_k-2,0\}$ and forms a reliability weight $w_{k,t}$ using \eqref{eq:apx_gate}, which mixes a conservative default discount $\gamma_{\mathrm{def}}$ with the volatility-based candidate $\gamma^{\mathrm{vol}}_{k,t}$ to produce $\gamma_{k,t}$ as in \eqref{eq:apx_gamma_mix}.
+The algorithm then applies the prior-preserving discount transformation \eqref{eq:apx_discount} to all arms, reflecting the possibility that any arm may drift even when unplayed, and finally incorporates the new observation for the played arm using the standard Beta--Bernoulli conjugate update \eqref{eq:apx_conjugate}.
+
+\subsection{Practical parameter intuition (brief)}
+This subsection gives qualitative guidance for interpreting VG-dTS parameters.
+\begin{itemize}
+\item \textbf{$\lambda$ (EWMA smoothing):} larger $\lambda$ makes volatility react slower (more stable), smaller $\lambda$ reacts faster (more sensitive).
+\item \textbf{$c$ (surprise clip):} smaller $c$ increases robustness but may under-react to genuine changepoints; larger $c$ increases sensitivity but risks overreaction to outliers.
+\item \textbf{$(\gamma_{\min},\gamma_{\max})$:} constrains forgetting rates; $\gamma_{\min}$ sets the maximum forgetting strength, $\gamma_{\max}$ sets the minimum forgetting strength.
+\item \textbf{$n_0$ (gate scale):} larger $n_0$ makes the algorithm rely longer on $\gamma_{\mathrm{def}}$; smaller $n_0$ trusts volatility earlier.
+\item \textbf{Mapping choice:} inverse-linear is easier to interpret via thresholds $(\nu_{\mathrm{low}},\nu_{\mathrm{high}})$; logistic is smoother and often easier to tune when there is a soft transition between stable/unstable regimes.
+\end{itemize}

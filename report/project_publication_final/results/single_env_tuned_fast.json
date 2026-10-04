@@ -1,0 +1,78 @@
+{
+  "environment": {
+    "key": "fast",
+    "name": "Fast Sine",
+    "horizon": 5000,
+    "n_arms": 4
+  },
+  "policies": {
+    "VG-dTS": {
+      "best_params": {
+        "alpha0": 1.0,
+        "beta0": 1.0,
+        "lambda_vol": 0.88,
+        "mean0": 0.0,
+        "var0": 0.0,
+        "optimistic": true,
+        "surprise_clip": 8.0,
+        "one_sided_negative_surprise": false,
+        "gamma_min": 0.12,
+        "gamma_max": 0.995,
+        "gamma_default": 0.85,
+        "n0": 25.0,
+        "gamma_mapping": "inverse_linear",
+        "vol_low": 0.0,
+        "vol_high": 3.5,
+        "logistic_mid": 1.0,
+        "logistic_slope": 4.0,
+        "eps": 1e-12
+      },
+      "tuning_final_normalized_regret": 0.2082665003689815,
+      "eval_final_normalized_regret": 0.21054601465469605
+    },
+    "dTS": {
+      "best_params": {
+        "lambda": 0.85,
+        "gamma": 0.85
+      },
+      "tuning_final_normalized_regret": 0.23901507179755288,
+      "eval_final_normalized_regret": 0.23927461465469596
+    },
+    "dOTS": {
+      "best_params": {
+        "lambda": 0.85,
+        "gamma": 0.85
+      },
+      "tuning_final_normalized_regret": 0.21077221465469576,
+      "eval_final_normalized_regret": 0.21026921465469586
+    },
+    "TS": {
+      "best_params": {},
+      "tuning_final_normalized_regret": 0.4498865003689814,
+      "eval_final_normalized_regret": 0.4498204146546958
+    },
+    "REXP3": {
+      "best_params": {
+        "gamma": 0.4,
+        "Delta": 125
+      },
+      "tuning_final_normalized_regret": 0.4356693575118386,
+      "eval_final_normalized_regret": 0.43591961465469603
+    },
+    "Dynamic TS": {
+      "best_params": {
+        "lambda": 0.6,
+        "C": 1.4999999999999998
+      },
+      "tuning_final_normalized_regret": 0.22148650036898154,
+      "eval_final_normalized_regret": 0.22152721465469571
+    },
+    "Beta-SWTS": {
+      "best_params": {
+        "tau": 50
+      },
+      "tuning_final_normalized_regret": 0.3473293575118385,
+      "eval_final_normalized_regret": 0.34713981465469523
+    }
+  }
+}

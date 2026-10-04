@@ -1,0 +1,78 @@
+{
+  "environment": {
+    "key": "pure_random_signal",
+    "name": "Pure Random Signal",
+    "horizon": 1000,
+    "n_arms": 4
+  },
+  "policies": {
+    "VG-dTS": {
+      "best_params": {
+        "alpha0": 1.0,
+        "beta0": 1.0,
+        "lambda_vol": 0.88,
+        "mean0": 0.0,
+        "var0": 0.0,
+        "optimistic": true,
+        "surprise_clip": 8.0,
+        "one_sided_negative_surprise": true,
+        "gamma_min": 0.12,
+        "gamma_max": 0.995,
+        "gamma_default": 0.85,
+        "n0": 0.0,
+        "gamma_mapping": "inverse_linear",
+        "vol_low": 0.0,
+        "vol_high": 3.5,
+        "logistic_mid": 1.0,
+        "logistic_slope": 4.0,
+        "eps": 1e-12
+      },
+      "tuning_final_normalized_regret": 0.26077847592448106,
+      "eval_final_normalized_regret": 0.26698514259114764
+    },
+    "dTS": {
+      "best_params": {
+        "lambda": 0.6,
+        "gamma": 0.6
+      },
+      "tuning_final_normalized_regret": 0.2635451425911477,
+      "eval_final_normalized_regret": 0.2684651425911477
+    },
+    "dOTS": {
+      "best_params": {
+        "lambda": 0.85,
+        "gamma": 0.85
+      },
+      "tuning_final_normalized_regret": 0.2656451425911477,
+      "eval_final_normalized_regret": 0.2660251425911477
+    },
+    "TS": {
+      "best_params": {},
+      "tuning_final_normalized_regret": 0.2672118092578144,
+      "eval_final_normalized_regret": 0.26822514259114777
+    },
+    "REXP3": {
+      "best_params": {
+        "gamma": 0.1,
+        "Delta": 50
+      },
+      "tuning_final_normalized_regret": 0.26094514259114765,
+      "eval_final_normalized_regret": 0.26880514259114763
+    },
+    "Dynamic TS": {
+      "best_params": {
+        "lambda": 0.6,
+        "C": 1.4999999999999998
+      },
+      "tuning_final_normalized_regret": 0.26417847592448107,
+      "eval_final_normalized_regret": 0.26752514259114774
+    },
+    "Beta-SWTS": {
+      "best_params": {
+        "tau": 100
+      },
+      "tuning_final_normalized_regret": 0.2610451425911477,
+      "eval_final_normalized_regret": 0.2674251425911477
+    }
+  }
+}

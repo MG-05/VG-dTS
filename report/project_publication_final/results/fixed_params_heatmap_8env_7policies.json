@@ -1,0 +1,662 @@
+{
+  "algorithms": [
+    "VG-dTS",
+    "dTS",
+    "dOTS",
+    "TS",
+    "REXP3",
+    "Dynamic TS",
+    "Beta-SWTS"
+  ],
+  "algorithm_colors": {
+    "VG-dTS": "#2E7D32",
+    "dTS": "#1565C0",
+    "dOTS": "#EF6C00",
+    "TS": "#455A64",
+    "REXP3": "#C62828",
+    "Dynamic TS": "#8D6E63",
+    "Beta-SWTS": "#6A1B9A"
+  },
+  "mode": "fixed",
+  "fixed_parameters": {
+    "VG-dTS": {
+      "alpha0": 1.0,
+      "beta0": 1.0,
+      "lambda_vol": 0.88,
+      "mean0": 0.0,
+      "var0": 0.0,
+      "optimistic": true,
+      "surprise_clip": 8.0,
+      "one_sided_negative_surprise": false,
+      "gamma_min": 0.12,
+      "gamma_max": 0.995,
+      "gamma_default": 0.45,
+      "n0": 0.0,
+      "gamma_mapping": "inverse_linear",
+      "vol_low": 0.0,
+      "vol_high": 2.6,
+      "logistic_mid": 1.0,
+      "logistic_slope": 4.0,
+      "eps": 1e-12
+    },
+    "dTS": {
+      "gamma": 0.75
+    },
+    "dOTS": {
+      "gamma": 0.75
+    },
+    "TS": {},
+    "REXP3": {
+      "gamma": 0.1136,
+      "Delta": 250
+    },
+    "Dynamic TS": {
+      "C": 250.0
+    },
+    "Beta-SWTS": {
+      "tau": 200
+    }
+  },
+  "evaluations": {
+    "slow": {
+      "environment": {
+        "key": "slow",
+        "name": "Slow Sine",
+        "horizon": 5000,
+        "n_arms": 4
+      },
+      "policies": {
+        "VG-dTS": {
+          "best_params": {
+            "alpha0": 1.0,
+            "beta0": 1.0,
+            "lambda_vol": 0.88,
+            "mean0": 0.0,
+            "var0": 0.0,
+            "optimistic": true,
+            "surprise_clip": 8.0,
+            "one_sided_negative_surprise": false,
+            "gamma_min": 0.12,
+            "gamma_max": 0.995,
+            "gamma_default": 0.45,
+            "n0": 0.0,
+            "gamma_mapping": "inverse_linear",
+            "vol_low": 0.0,
+            "vol_high": 2.6,
+            "logistic_mid": 1.0,
+            "logistic_slope": 4.0,
+            "eps": 1e-12
+          },
+          "tuning_final_normalized_regret": 0.0998636771165933,
+          "eval_final_normalized_regret": 0.0998636771165933
+        },
+        "dTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.2525104771165934,
+          "eval_final_normalized_regret": 0.2525104771165934
+        },
+        "dOTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.19989107711659307,
+          "eval_final_normalized_regret": 0.19989107711659307
+        },
+        "TS": {
+          "best_params": {},
+          "tuning_final_normalized_regret": 0.3168554771165931,
+          "eval_final_normalized_regret": 0.3168554771165931
+        },
+        "REXP3": {
+          "best_params": {
+            "gamma": 0.1136,
+            "Delta": 250
+          },
+          "tuning_final_normalized_regret": 0.2534606771165933,
+          "eval_final_normalized_regret": 0.2534606771165933
+        },
+        "Dynamic TS": {
+          "best_params": {
+            "C": 250.0
+          },
+          "tuning_final_normalized_regret": 0.2576606771165933,
+          "eval_final_normalized_regret": 0.2576606771165933
+        },
+        "Beta-SWTS": {
+          "best_params": {
+            "tau": 200
+          },
+          "tuning_final_normalized_regret": 0.07650907711659329,
+          "eval_final_normalized_regret": 0.07650907711659329
+        }
+      }
+    },
+    "fast": {
+      "environment": {
+        "key": "fast",
+        "name": "Fast Sine",
+        "horizon": 5000,
+        "n_arms": 4
+      },
+      "policies": {
+        "VG-dTS": {
+          "best_params": {
+            "alpha0": 1.0,
+            "beta0": 1.0,
+            "lambda_vol": 0.88,
+            "mean0": 0.0,
+            "var0": 0.0,
+            "optimistic": true,
+            "surprise_clip": 8.0,
+            "one_sided_negative_surprise": false,
+            "gamma_min": 0.12,
+            "gamma_max": 0.995,
+            "gamma_default": 0.45,
+            "n0": 0.0,
+            "gamma_mapping": "inverse_linear",
+            "vol_low": 0.0,
+            "vol_high": 2.6,
+            "logistic_mid": 1.0,
+            "logistic_slope": 4.0,
+            "eps": 1e-12
+          },
+          "tuning_final_normalized_regret": 0.21104141465469575,
+          "eval_final_normalized_regret": 0.21104141465469575
+        },
+        "dTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.27310881465469555,
+          "eval_final_normalized_regret": 0.27310881465469555
+        },
+        "dOTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.23223161465469588,
+          "eval_final_normalized_regret": 0.23223161465469588
+        },
+        "TS": {
+          "best_params": {},
+          "tuning_final_normalized_regret": 0.44968661465469606,
+          "eval_final_normalized_regret": 0.44968661465469606
+        },
+        "REXP3": {
+          "best_params": {
+            "gamma": 0.1136,
+            "Delta": 250
+          },
+          "tuning_final_normalized_regret": 0.44554661465469664,
+          "eval_final_normalized_regret": 0.44554661465469664
+        },
+        "Dynamic TS": {
+          "best_params": {
+            "C": 250.0
+          },
+          "tuning_final_normalized_regret": 0.4482814146546959,
+          "eval_final_normalized_regret": 0.4482814146546959
+        },
+        "Beta-SWTS": {
+          "best_params": {
+            "tau": 200
+          },
+          "tuning_final_normalized_regret": 0.4288914146546961,
+          "eval_final_normalized_regret": 0.4288914146546961
+        }
+      }
+    },
+    "abrupt": {
+      "environment": {
+        "key": "abrupt",
+        "name": "Abrupt Cycle",
+        "horizon": 5000,
+        "n_arms": 4
+      },
+      "policies": {
+        "VG-dTS": {
+          "best_params": {
+            "alpha0": 1.0,
+            "beta0": 1.0,
+            "lambda_vol": 0.88,
+            "mean0": 0.0,
+            "var0": 0.0,
+            "optimistic": true,
+            "surprise_clip": 8.0,
+            "one_sided_negative_surprise": false,
+            "gamma_min": 0.12,
+            "gamma_max": 0.995,
+            "gamma_default": 0.45,
+            "n0": 0.0,
+            "gamma_mapping": "inverse_linear",
+            "vol_low": 0.0,
+            "vol_high": 2.6,
+            "logistic_mid": 1.0,
+            "logistic_slope": 4.0,
+            "eps": 1e-12
+          },
+          "tuning_final_normalized_regret": 0.1250832000000021,
+          "eval_final_normalized_regret": 0.1250832000000021
+        },
+        "dTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.1702992000000019,
+          "eval_final_normalized_regret": 0.1702992000000019
+        },
+        "dOTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.15683540000000212,
+          "eval_final_normalized_regret": 0.15683540000000212
+        },
+        "TS": {
+          "best_params": {},
+          "tuning_final_normalized_regret": 0.17341720000000216,
+          "eval_final_normalized_regret": 0.17341720000000216
+        },
+        "REXP3": {
+          "best_params": {
+            "gamma": 0.1136,
+            "Delta": 250
+          },
+          "tuning_final_normalized_regret": 0.2046802000000021,
+          "eval_final_normalized_regret": 0.2046802000000021
+        },
+        "Dynamic TS": {
+          "best_params": {
+            "C": 250.0
+          },
+          "tuning_final_normalized_regret": 0.17886700000000177,
+          "eval_final_normalized_regret": 0.17886700000000177
+        },
+        "Beta-SWTS": {
+          "best_params": {
+            "tau": 200
+          },
+          "tuning_final_normalized_regret": 0.18891900000000225,
+          "eval_final_normalized_regret": 0.18891900000000225
+        }
+      }
+    },
+    "mixed": {
+      "environment": {
+        "key": "mixed",
+        "name": "Mixed Regime",
+        "horizon": 5000,
+        "n_arms": 4
+      },
+      "policies": {
+        "VG-dTS": {
+          "best_params": {
+            "alpha0": 1.0,
+            "beta0": 1.0,
+            "lambda_vol": 0.88,
+            "mean0": 0.0,
+            "var0": 0.0,
+            "optimistic": true,
+            "surprise_clip": 8.0,
+            "one_sided_negative_surprise": false,
+            "gamma_min": 0.12,
+            "gamma_max": 0.995,
+            "gamma_default": 0.45,
+            "n0": 0.0,
+            "gamma_mapping": "inverse_linear",
+            "vol_low": 0.0,
+            "vol_high": 2.6,
+            "logistic_mid": 1.0,
+            "logistic_slope": 4.0,
+            "eps": 1e-12
+          },
+          "tuning_final_normalized_regret": 0.15060611953235223,
+          "eval_final_normalized_regret": 0.15060611953235223
+        },
+        "dTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.20881091953235217,
+          "eval_final_normalized_regret": 0.20881091953235217
+        },
+        "dOTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.1912433195323525,
+          "eval_final_normalized_regret": 0.1912433195323525
+        },
+        "TS": {
+          "best_params": {},
+          "tuning_final_normalized_regret": 0.1392069195323523,
+          "eval_final_normalized_regret": 0.1392069195323523
+        },
+        "REXP3": {
+          "best_params": {
+            "gamma": 0.1136,
+            "Delta": 250
+          },
+          "tuning_final_normalized_regret": 0.1959319195323523,
+          "eval_final_normalized_regret": 0.1959319195323523
+        },
+        "Dynamic TS": {
+          "best_params": {
+            "C": 250.0
+          },
+          "tuning_final_normalized_regret": 0.13684231953235218,
+          "eval_final_normalized_regret": 0.13684231953235218
+        },
+        "Beta-SWTS": {
+          "best_params": {
+            "tau": 200
+          },
+          "tuning_final_normalized_regret": 0.09089431953235214,
+          "eval_final_normalized_regret": 0.09089431953235214
+        }
+      }
+    },
+    "random_breakpoints": {
+      "environment": {
+        "key": "random_breakpoints",
+        "name": "Random Breakpoints",
+        "horizon": 5000,
+        "n_arms": 4
+      },
+      "policies": {
+        "VG-dTS": {
+          "best_params": {
+            "alpha0": 1.0,
+            "beta0": 1.0,
+            "lambda_vol": 0.88,
+            "mean0": 0.0,
+            "var0": 0.0,
+            "optimistic": true,
+            "surprise_clip": 8.0,
+            "one_sided_negative_surprise": false,
+            "gamma_min": 0.12,
+            "gamma_max": 0.995,
+            "gamma_default": 0.45,
+            "n0": 0.0,
+            "gamma_mapping": "inverse_linear",
+            "vol_low": 0.0,
+            "vol_high": 2.6,
+            "logistic_mid": 1.0,
+            "logistic_slope": 4.0,
+            "eps": 1e-12
+          },
+          "tuning_final_normalized_regret": 0.11710470022648829,
+          "eval_final_normalized_regret": 0.11710470022648829
+        },
+        "dTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.18167030022648842,
+          "eval_final_normalized_regret": 0.18167030022648842
+        },
+        "dOTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.1625871002264887,
+          "eval_final_normalized_regret": 0.1625871002264887
+        },
+        "TS": {
+          "best_params": {},
+          "tuning_final_normalized_regret": 0.16160870022648852,
+          "eval_final_normalized_regret": 0.16160870022648852
+        },
+        "REXP3": {
+          "best_params": {
+            "gamma": 0.1136,
+            "Delta": 250
+          },
+          "tuning_final_normalized_regret": 0.1612025002264888,
+          "eval_final_normalized_regret": 0.1612025002264888
+        },
+        "Dynamic TS": {
+          "best_params": {
+            "C": 250.0
+          },
+          "tuning_final_normalized_regret": 0.09861010022648845,
+          "eval_final_normalized_regret": 0.09861010022648845
+        },
+        "Beta-SWTS": {
+          "best_params": {
+            "tau": 200
+          },
+          "tuning_final_normalized_regret": 0.06985990022648839,
+          "eval_final_normalized_regret": 0.06985990022648839
+        }
+      }
+    },
+    "random_drift": {
+      "environment": {
+        "key": "random_drift",
+        "name": "Random Drift Amplitude",
+        "horizon": 5000,
+        "n_arms": 4
+      },
+      "policies": {
+        "VG-dTS": {
+          "best_params": {
+            "alpha0": 1.0,
+            "beta0": 1.0,
+            "lambda_vol": 0.88,
+            "mean0": 0.0,
+            "var0": 0.0,
+            "optimistic": true,
+            "surprise_clip": 8.0,
+            "one_sided_negative_surprise": false,
+            "gamma_min": 0.12,
+            "gamma_max": 0.995,
+            "gamma_default": 0.45,
+            "n0": 0.0,
+            "gamma_mapping": "inverse_linear",
+            "vol_low": 0.0,
+            "vol_high": 2.6,
+            "logistic_mid": 1.0,
+            "logistic_slope": 4.0,
+            "eps": 1e-12
+          },
+          "tuning_final_normalized_regret": 0.10021646270522058,
+          "eval_final_normalized_regret": 0.10021646270522058
+        },
+        "dTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.15101266270522057,
+          "eval_final_normalized_regret": 0.15101266270522057
+        },
+        "dOTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.13505646270522054,
+          "eval_final_normalized_regret": 0.13505646270522054
+        },
+        "TS": {
+          "best_params": {},
+          "tuning_final_normalized_regret": 0.07965946270522055,
+          "eval_final_normalized_regret": 0.07965946270522055
+        },
+        "REXP3": {
+          "best_params": {
+            "gamma": 0.1136,
+            "Delta": 250
+          },
+          "tuning_final_normalized_regret": 0.14949266270522055,
+          "eval_final_normalized_regret": 0.14949266270522055
+        },
+        "Dynamic TS": {
+          "best_params": {
+            "C": 250.0
+          },
+          "tuning_final_normalized_regret": 0.07676466270522053,
+          "eval_final_normalized_regret": 0.07676466270522053
+        },
+        "Beta-SWTS": {
+          "best_params": {
+            "tau": 200
+          },
+          "tuning_final_normalized_regret": 0.06114846270522048,
+          "eval_final_normalized_regret": 0.06114846270522048
+        }
+      }
+    },
+    "global_switching": {
+      "environment": {
+        "key": "global_switching",
+        "name": "Global Switching",
+        "horizon": 5000,
+        "n_arms": 4
+      },
+      "policies": {
+        "VG-dTS": {
+          "best_params": {
+            "alpha0": 1.0,
+            "beta0": 1.0,
+            "lambda_vol": 0.88,
+            "mean0": 0.0,
+            "var0": 0.0,
+            "optimistic": true,
+            "surprise_clip": 8.0,
+            "one_sided_negative_surprise": false,
+            "gamma_min": 0.12,
+            "gamma_max": 0.995,
+            "gamma_default": 0.45,
+            "n0": 0.0,
+            "gamma_mapping": "inverse_linear",
+            "vol_low": 0.0,
+            "vol_high": 2.6,
+            "logistic_mid": 1.0,
+            "logistic_slope": 4.0,
+            "eps": 1e-12
+          },
+          "tuning_final_normalized_regret": 0.13038269054854354,
+          "eval_final_normalized_regret": 0.13038269054854354
+        },
+        "dTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.18601649054854347,
+          "eval_final_normalized_regret": 0.18601649054854347
+        },
+        "dOTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.16569269054854396,
+          "eval_final_normalized_regret": 0.16569269054854396
+        },
+        "TS": {
+          "best_params": {},
+          "tuning_final_normalized_regret": 0.20858049054854336,
+          "eval_final_normalized_regret": 0.20858049054854336
+        },
+        "REXP3": {
+          "best_params": {
+            "gamma": 0.1136,
+            "Delta": 250
+          },
+          "tuning_final_normalized_regret": 0.209483090548544,
+          "eval_final_normalized_regret": 0.209483090548544
+        },
+        "Dynamic TS": {
+          "best_params": {
+            "C": 250.0
+          },
+          "tuning_final_normalized_regret": 0.1706726905485437,
+          "eval_final_normalized_regret": 0.1706726905485437
+        },
+        "Beta-SWTS": {
+          "best_params": {
+            "tau": 200
+          },
+          "tuning_final_normalized_regret": 0.14168409054854342,
+          "eval_final_normalized_regret": 0.14168409054854342
+        }
+      }
+    },
+    "per_arm_switching": {
+      "environment": {
+        "key": "per_arm_switching",
+        "name": "Per-Arm Switching",
+        "horizon": 5000,
+        "n_arms": 4
+      },
+      "policies": {
+        "VG-dTS": {
+          "best_params": {
+            "alpha0": 1.0,
+            "beta0": 1.0,
+            "lambda_vol": 0.88,
+            "mean0": 0.0,
+            "var0": 0.0,
+            "optimistic": true,
+            "surprise_clip": 8.0,
+            "one_sided_negative_surprise": false,
+            "gamma_min": 0.12,
+            "gamma_max": 0.995,
+            "gamma_default": 0.45,
+            "n0": 0.0,
+            "gamma_mapping": "inverse_linear",
+            "vol_low": 0.0,
+            "vol_high": 2.6,
+            "logistic_mid": 1.0,
+            "logistic_slope": 4.0,
+            "eps": 1e-12
+          },
+          "tuning_final_normalized_regret": 0.1462006433020172,
+          "eval_final_normalized_regret": 0.1462006433020172
+        },
+        "dTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.20113644330201708,
+          "eval_final_normalized_regret": 0.20113644330201708
+        },
+        "dOTS": {
+          "best_params": {
+            "gamma": 0.75
+          },
+          "tuning_final_normalized_regret": 0.18157844330201697,
+          "eval_final_normalized_regret": 0.18157844330201697
+        },
+        "TS": {
+          "best_params": {},
+          "tuning_final_normalized_regret": 0.23630744330201725,
+          "eval_final_normalized_regret": 0.23630744330201725
+        },
+        "REXP3": {
+          "best_params": {
+            "gamma": 0.1136,
+            "Delta": 250
+          },
+          "tuning_final_normalized_regret": 0.23049644330201682,
+          "eval_final_normalized_regret": 0.23049644330201682
+        },
+        "Dynamic TS": {
+          "best_params": {
+            "C": 250.0
+          },
+          "tuning_final_normalized_regret": 0.20989284330201705,
+          "eval_final_normalized_regret": 0.20989284330201705
+        },
+        "Beta-SWTS": {
+          "best_params": {
+            "tau": 200
+          },
+          "tuning_final_normalized_regret": 0.16554544330201704,
+          "eval_final_normalized_regret": 0.16554544330201704
+        }
+      }
+    }
+  }
+}

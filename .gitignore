@@ -211,6 +211,10 @@ tempCodeRunnerFile.py
 # PyPI configuration file
 .pypirc
 
+# Latex Bindings
+*.pdf
+*.sty
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
