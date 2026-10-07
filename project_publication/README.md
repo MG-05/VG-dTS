@@ -1,8 +1,8 @@
 # Paper experiment pipeline
 
-See the [root README](../README.md) for installation, paper replay, retuning,
-plotting, and manuscript build commands, and [REPRODUCIBILITY.md](../REPRODUCIBILITY.md)
-for exact seeds and implementation conventions.
+See the [root README](../README.md) for the paper overview and figures, and
+[REPRODUCIBILITY.md](../REPRODUCIBILITY.md) for installation, replay, retuning,
+plotting, manuscript builds, and exact experimental conventions.
 
 ```sh
 python -m project_publication --help
