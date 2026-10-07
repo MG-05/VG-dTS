@@ -1,20 +1,6 @@
-from __future__ import annotations
-
-from dataclasses import replace
-
 import numpy as np
 import pytest
-
-from src.adts.policies import (
-    VGdTSParams,
-    _standardized_surprise,
-    _variance_gated_confidence_bonus,
-    run_VG_dTS,
-    run_VG_dTS_v2,
-    run_VG_dTS_v21,
-    run_VG_dTS_v3,
-)
-from src.adts.vgdts_config import make_benchmark_vgdts_v21_params
+from src.adts.policies import VGdTSParams, _standardized_surprise, run_VG_dTS
 
 
 def _reference_vgdts_original(
@@ -126,14 +112,6 @@ def test_vgdts_rejects_invalid_logistic_slope() -> None:
         run_VG_dTS(mu, params, np.random.default_rng(0))
 
 
-def test_vgdts_rejects_negative_confidence_bonus_scale() -> None:
-    mu = np.full((3, 40), 0.5, dtype=float)
-    params = VGdTSParams(confidence_bonus_enabled=True, confidence_bonus_scale=-0.1)
-
-    with pytest.raises(ValueError, match="confidence_bonus_scale must be >= 0"):
-        run_VG_dTS(mu, params, np.random.default_rng(0))
-
-
 def test_standardized_surprise_one_sided_ignores_positive_errors() -> None:
     params_two_sided = VGdTSParams(one_sided_negative_surprise=False, surprise_clip=50.0)
     params_one_sided = VGdTSParams(one_sided_negative_surprise=True, surprise_clip=50.0)
@@ -180,128 +158,3 @@ def test_vgdts_one_sided_surprise_changes_trajectory() -> None:
     rewards_two_sided = run_VG_dTS(mu, params_two_sided, np.random.default_rng(13))
     rewards_one_sided = run_VG_dTS(mu, params_one_sided, np.random.default_rng(13))
     assert not np.array_equal(rewards_two_sided, rewards_one_sided)
-
-
-def test_variance_gated_confidence_bonus_increases_with_volatility_and_low_counts() -> None:
-    params = VGdTSParams(
-        confidence_bonus_enabled=True,
-        confidence_bonus_scale=0.6,
-        confidence_bonus_vol_weight=0.8,
-        confidence_bonus_coldstart_weight=0.4,
-        confidence_bonus_clip=1.0,
-    )
-    posterior_std = np.array([0.2, 0.2, 0.2], dtype=float)
-    vol_norm = np.array([0.0, 1.0, 0.0], dtype=float)
-    n_eff = np.array([25.0, 25.0, 0.0], dtype=float)
-
-    bonus = _variance_gated_confidence_bonus(
-        posterior_std=posterior_std,
-        vol_norm=vol_norm,
-        n_eff=n_eff,
-        params=params,
-    )
-
-    assert bonus[1] > bonus[0]
-    assert bonus[2] > bonus[0]
-
-
-def test_vgdts_confidence_bonus_changes_trajectory() -> None:
-    rng = np.random.default_rng(19)
-    mu = rng.uniform(0.05, 0.95, size=(4, 400))
-
-    params_base = VGdTSParams(
-        optimistic=True,
-        gamma_mapping="inverse_linear",
-        dual_memory_enabled=True,
-        surprise_mode="neg_log_likelihood",
-    )
-    params_bonus = VGdTSParams(
-        optimistic=True,
-        gamma_mapping="inverse_linear",
-        dual_memory_enabled=True,
-        surprise_mode="neg_log_likelihood",
-        confidence_bonus_enabled=True,
-        confidence_bonus_scale=0.6,
-        confidence_bonus_vol_weight=0.8,
-        confidence_bonus_coldstart_weight=0.4,
-        confidence_bonus_clip=0.75,
-    )
-
-    rewards_base = run_VG_dTS(mu, params_base, np.random.default_rng(23))
-    rewards_bonus = run_VG_dTS(mu, params_bonus, np.random.default_rng(23))
-    assert not np.array_equal(rewards_base, rewards_bonus)
-
-
-def test_vgdts_v2_enforces_frozen_mechanism_set() -> None:
-    rng = np.random.default_rng(41)
-    mu = rng.uniform(0.05, 0.95, size=(4, 300))
-
-    params = VGdTSParams(
-        dual_memory_enabled=False,
-        surprise_mode="standardized",
-        confidence_bonus_enabled=False,
-    )
-    rewards_v2 = run_VG_dTS_v2(mu, params, np.random.default_rng(29))
-
-    expected_v2_params = replace(
-        params,
-        dual_memory_enabled=True,
-        surprise_mode="neg_log_likelihood",
-        confidence_bonus_enabled=True,
-    )
-    rewards_expected = run_VG_dTS(mu, expected_v2_params, np.random.default_rng(29))
-    assert np.array_equal(rewards_v2, rewards_expected)
-
-
-def test_vgdts_v21_matches_v2_when_addons_disabled() -> None:
-    rng = np.random.default_rng(61)
-    mu = rng.uniform(0.05, 0.95, size=(4, 300))
-    params = VGdTSParams()
-
-    rewards_v2 = run_VG_dTS_v2(mu, params, np.random.default_rng(37))
-    rewards_v21 = run_VG_dTS_v21(mu, params, np.random.default_rng(37))
-    assert np.array_equal(rewards_v2, rewards_v21)
-
-
-def test_vgdts_v21_benchmark_preset_is_shock_score_only() -> None:
-    params = make_benchmark_vgdts_v21_params()
-
-    assert params.shock_score_enabled is True
-    assert params.shock_n_eff_enabled is False
-    assert params.selective_revisit_enabled is False
-
-
-def test_vgdts_v21_addon_changes_trajectory() -> None:
-    rng = np.random.default_rng(62)
-    mu = rng.uniform(0.05, 0.95, size=(4, 300))
-
-    params_base = VGdTSParams()
-    params_full = VGdTSParams(
-        shock_score_enabled=True,
-        shock_n_eff_enabled=True,
-        selective_revisit_enabled=True,
-    )
-
-    rewards_base = run_VG_dTS_v21(mu, params_base, np.random.default_rng(41))
-    rewards_full = run_VG_dTS_v21(mu, params_full, np.random.default_rng(41))
-    assert not np.array_equal(rewards_base, rewards_full)
-
-
-def test_vgdts_v3_component_toggles_change_trajectory() -> None:
-    rng = np.random.default_rng(52)
-    mu = rng.uniform(0.05, 0.95, size=(4, 300))
-
-    params_ablation = VGdTSParams(
-        stale_arm_revisit_enabled=False,
-        global_shock_enabled=False,
-        two_timescale_volatility_enabled=False,
-    )
-    params_full = VGdTSParams(
-        stale_arm_revisit_enabled=True,
-        global_shock_enabled=True,
-        two_timescale_volatility_enabled=True,
-    )
-
-    rewards_ablation = run_VG_dTS_v3(mu, params_ablation, np.random.default_rng(31))
-    rewards_full = run_VG_dTS_v3(mu, params_full, np.random.default_rng(31))
-    assert not np.array_equal(rewards_ablation, rewards_full)

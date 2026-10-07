@@ -499,110 +499,31 @@ def per_arm_switching_means(
     return means
 
 
-def make_recovering_reward_table(
-    n_arms: int = 8,
-    z_max: int = 30,
-    seed: int | None = None,
-) -> FloatArray:
+def abrupt_means(
+    horizon: int = 1000,
+    n_arms: int = 4,
+    cycle_len: int = 250,
+    change_times: list[int] | None = None,
+    levels: list[float] | None = None,
+) -> np.ndarray:
     """
-    Synthetic recovering-bandit reward table:
-      table[j, z] = expected reward for arm j after z rounds of rest.
-    Curves mix logistic recovery and smooth bump-like recovery.
+    Abruptly varying env used in Raj2017 Figure 1:
+      - repeats every cycle_len
+      - within each cycle, all arms start at 0
+      - arm k jumps to levels[k] at change_times[k] and stays there until cycle ends
+    Returns means with shape (T, K).
     """
-    if n_arms <= 0:
-        raise ValueError("n_arms must be > 0.")
-    if z_max < 1:
-        raise ValueError("z_max must be >= 1.")
+    if change_times is None:
+        change_times = [50, 100, 150, 200]
+    if levels is None:
+        levels = [0.10, 0.37, 0.63, 0.90]
+    if len(change_times) != n_arms or len(levels) != n_arms:
+        raise ValueError("change_times and levels must have length n_arms.")
 
-    rng = np.random.default_rng(seed)
-    z = np.arange(z_max + 1, dtype=float)
-    table = np.zeros((n_arms, z_max + 1), dtype=float)
-
-    for arm in range(n_arms):
-        if arm % 2 == 0:
-            low = rng.uniform(0.02, 0.20)
-            high = rng.uniform(0.60, 0.95)
-            slope = rng.uniform(0.20, 0.55)
-            midpoint = rng.uniform(0.20 * z_max, 0.75 * z_max)
-            curve = low + (high - low) / (1.0 + np.exp(-slope * (z - midpoint)))
-        else:
-            base = rng.uniform(0.05, 0.30)
-            peak = rng.uniform(0.55, 0.95)
-            center = rng.uniform(0.15 * z_max, 0.85 * z_max)
-            width = rng.uniform(max(1.5, 0.08 * z_max), max(2.0, 0.35 * z_max))
-            bump = np.exp(-0.5 * ((z - center) / width) ** 2)
-            trend = rng.uniform(0.0, 0.25) * (z / max(1.0, float(z_max)))
-            curve = base + (peak - base) * bump + trend
-        table[arm] = np.clip(curve, 0.0, 1.0)
-
-    return table
-
-
-@dataclass
-class RecoveringBanditEnv:
-    """
-    Recovering bandit environment from 1910.14354:
-      expected reward depends on time since arm was last played.
-    """
-
-    reward_table: FloatArray
-    seed: int | None = None
-    initial_delays: NDArray[np.int64] | None = None
-    rng: np.random.Generator = field(init=False, repr=False)
-    delays: NDArray[np.int64] = field(init=False, repr=False)
-
-    def __post_init__(self) -> None:
-        table = np.asarray(self.reward_table, dtype=float)
-        if table.ndim != 2:
-            raise ValueError("reward_table must have shape (n_arms, z_max + 1).")
-        if np.any(table < 0.0) or np.any(table > 1.0):
-            raise ValueError("reward_table values must be in [0, 1].")
-        if table.shape[1] < 2:
-            raise ValueError("reward_table must have z_max + 1 >= 2 columns.")
-
-        self.reward_table = table
-        self.rng = np.random.default_rng(self.seed)
-
-        if self.initial_delays is None:
-            self.delays = np.zeros(self.n_arms, dtype=np.int64)
-        else:
-            init = np.asarray(self.initial_delays, dtype=np.int64)
-            if init.shape != (self.n_arms,):
-                raise ValueError("initial_delays must have shape (n_arms,).")
-            if np.any(init < 0) or np.any(init > self.z_max):
-                raise ValueError("initial_delays entries must be in [0, z_max].")
-            self.delays = init.copy()
-
-    @property
-    def n_arms(self) -> int:
-        return int(self.reward_table.shape[0])
-
-    @property
-    def z_max(self) -> int:
-        return int(self.reward_table.shape[1] - 1)
-
-    def reset(self, seed: int | None = None) -> None:
-        if seed is not None:
-            self.rng = np.random.default_rng(seed)
-        if self.initial_delays is None:
-            self.delays = np.zeros(self.n_arms, dtype=np.int64)
-        else:
-            self.delays = np.asarray(self.initial_delays, dtype=np.int64).copy()
-
-    def current_expected_rewards(self) -> FloatArray:
-        return self.reward_table[np.arange(self.n_arms), self.delays]
-
-    def step(self, arm: int) -> tuple[int, int, float]:
-        """
-        Returns (reward, delay_before_pull, expected_reward_before_pull).
-        """
-        if arm < 0 or arm >= self.n_arms:
-            raise ValueError(f"arm index {arm} out of range [0, {self.n_arms}).")
-
-        z_before = int(self.delays[arm])
-        mean = float(self.reward_table[arm, z_before])
-        reward = int(self.rng.random() < mean)
-
-        self.delays = np.minimum(self.delays + 1, self.z_max)
-        self.delays[arm] = 0
-        return reward, z_before, mean
+    means = np.zeros((horizon, n_arms), dtype=float)
+    for t in range(horizon):
+        tau = t % cycle_len
+        for k in range(n_arms):
+            if tau >= change_times[k]:
+                means[t, k] = levels[k]
+    return means

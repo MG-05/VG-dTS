@@ -9,18 +9,9 @@
     "environment_oracle/environment_oracle_global_switching.png": "da93c8b36acf9d2439f5788bb0b6219174eeaab42a98fe38f729c4823b1c87bf",
     "environment_oracle/environment_oracle_mixed.png": "88651ea3b28696212695989f3aac89beb575a18342cc3a423951d2330f21fe79",
     "environment_oracle/environment_oracle_per_arm_switching.png": "b9b323049ba7311634b8ff594490a5012ff2582a96d28a65c92443f40ace099a",
-    "environment_oracle/environment_oracle_pure_random_signal.png": "acf7012d13243313d255b02d87e2f6124854374244d7ed754c3ffffb5ad5cfcb",
     "environment_oracle/environment_oracle_random_breakpoints.png": "a384a91d53c64bc9613ba075a6766533d63f20551028862ac4520ec21ba66b29",
     "environment_oracle/environment_oracle_random_drift.png": "ae85bed074b78d084f71a5b2e0ad4a9d963b868c1666e027849eda480c7d1125",
     "environment_oracle/environment_oracle_slow.png": "c19657ff64be4cb90721248a33b9c90156967208195ca017ad5b1516590d5c44",
-    "fixed_params_envs/fixed_params_env_abrupt.png": "109ee5e503b25e7c362e2a35fdc7db30a8ba963d1b110fab17bc3de7c922673a",
-    "fixed_params_envs/fixed_params_env_fast.png": "64cac8b0d51d753c5a9444911294a804edc5649be842bec547be8a8ef1e7d42f",
-    "fixed_params_envs/fixed_params_env_global_switching.png": "6bdf2e2bab4768f450dad7af516ab0288371cd032bac0b3696409eb46c776717",
-    "fixed_params_envs/fixed_params_env_mixed.png": "d0f4b9b198629ee847ff8267d04fc68fbe10f5fb44396421796a0dffd00ddbc5",
-    "fixed_params_envs/fixed_params_env_per_arm_switching.png": "64b1a8d08f962e2f7c5036e4d92ab24ed377df1f868b413806a9680242ac5be0",
-    "fixed_params_envs/fixed_params_env_random_breakpoints.png": "efefa61cdcba7d4aac66fca70553c3dfc45acab5da8126d94df7e69b14ad389a",
-    "fixed_params_envs/fixed_params_env_random_drift.png": "89466e9160f9031e6284a0378dd2386da76c01e8322a84a6dc2385c35f4cddcf",
-    "fixed_params_envs/fixed_params_env_slow.png": "dcd2ba9ba104164e62f1817740f293e0e06f2d2b32327df3ca33c7bcbc910fc8",
     "fixed_params_heatmap_8env_7policies.png": "ce0b070ff40232cbc9f97bcc42e496bd24936310e4edcff924a770c605e79ff0",
     "main.tex": "a723f0f569aaeb87635b8578cfc8496acd268441ed79e2305cb34472db7bf85e",
     "neurips_2025.sty": "eff87df9f2743e63e9a74b1be467920bd2643779ef27eabaa2468264b7e95252",
@@ -28,7 +19,7 @@
     "original_paper_envs_tuned.png": "41a25ad8d2f193f840689f6d52c69ca17a6705213261df28d0bda550f23546ce",
     "pkg.tex": "1d70f74bcc299d3b94e109ded76cb9a533d1a6d4911587e7892e42e9ec3cb99a",
     "ref.bib": "a3121181b393b1dc7f64c056a21fa3dcc4f5da4ae12080740ac9216e71d3086c",
-    "rigorous_pure_random_signal_tuned.png": "1719383c8b161cba834625dde53eedff2a494499534f4ffb83fd2ad89cd45d09",
-    "single_env_tuned_fast.png": "dcb4f33bf38dac5f2ff0b200cc12e67542cd94c89d4486df25b9adcc216f7c32"
-  }
+    "rigorous_pure_random_signal_tuned.png": "1719383c8b161cba834625dde53eedff2a494499534f4ffb83fd2ad89cd45d09"
+  },
+  "scope": "Original export hashes for retained manuscript sources and figures; unused figures removed during repository cleanup."
 }

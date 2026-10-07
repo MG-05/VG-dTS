@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-06",
+  "upstream_paper_code_commit": "41a1730bfdefbc74d3445e474324bcb8236eb248",
+  "status": "passed",
+  "python_environment": {
+    "recommended_python": "3.12",
+    "numpy": "1.26.4",
+    "matplotlib": "3.9.1.post1",
+    "contourpy": "1.3.2"
+  },
+  "tests": {
+    "passed": 23,
+    "command": "python -m pytest -q"
+  },
+  "manuscript_build": {
+    "engine": "pdfLaTeX and BibTeX (TeX Live 2026 Basic)",
+    "pages": 17,
+    "undefined_references_or_citations": false,
+    "overfull_boxes": false,
+    "existing_duplicate_hyperlink_warnings": 9
+  },
+  "reference_sha256": {
+    "fixed_params_heatmap_8env_7policies.json": "23133558dd7b8552f78ec96b30eb1818c90442e4597fe1ea2abf559d94c8be01",
+    "optimized_heatmap_8env_7policies.json": "0d544f71abbf9f20b22776ac828e3bab246f6bcd991a52a208199c61f201962d",
+    "rigorous_pure_random_signal_tuned.json": "035e057ad29e8cf3ee4f8ce44bcb4bc11fdf1a0ce43bd536ae02806e10897ae8"
+  },
+  "reconstructed_settings": {
+    "horizon": 5000,
+    "n_arms": 4,
+    "seed": 0,
+    "tuning_runs": 70,
+    "eval_runs": 1000,
+    "original_invocation_recovered": false
+  },
+  "validation_scope": "Evaluation replay at archived hyperparameters; full tuning search has not been rerun.",
+  "numpy_compatibility": "NumPy 2.x changes the multinomial breakpoint realization. NumPy 1.26.4 matches archived oracle and TS tuning values without changing environment parameters.",
+  "evaluation_replay": {
+    "passed": true,
+    "cells": 119,
+    "max_absolute_error": 0.0,
+    "atol": 1e-12,
+    "mismatches": [],
+    "mode": "paper",
+    "runtime_note": "Full initial evaluation replay under NumPy 2.5.2 matched 105/119 cells exactly. Both random_breakpoints jobs were rerun under NumPy 1.26.4; all 14 corrected cells match exactly. The initial audit run is preserved separately. New reproductions require NumPy 1.26.4 throughout.",
+    "initial_simulation_seconds": 1292.955773624999
+  },
+  "tuning_spot_checks": [
+    {
+      "environment": "slow",
+      "policy": "TS",
+      "runs": 70,
+      "seed": 1040100,
+      "absolute_error": 0.0
+    },
+    {
+      "environment": "random_breakpoints",
+      "policy": "TS",
+      "runs": 70,
+      "seed": 5040100,
+      "absolute_error": 0.0,
+      "numpy": "1.26.4"
+    }
+  ],
+  "cross_version_checks": {
+    "numpy_versions": [
+      "1.26.4",
+      "2.5.2"
+    ],
+    "non_breakpoint_environments": 7,
+    "policies": 7,
+    "rounds_per_trace": 5000,
+    "policy_seed": "301 + policy_index",
+    "identical_reward_traces": 49,
+    "max_environment_mean_absolute_difference": 2.220446049250313e-16
+  },
+  "generated_manuscript_figures": 12,
+  "final_source_sha256": {
+    "src/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/adts/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/adts/envs.py": "b1219a161e43ea7bcbec97da81536568b499fc59709dfe3db441802d23730d7b",
+    "src/adts/oracle.py": "65c903ee154b4afba40a7f1ad2cc7b371e3fed4a565fc1cfa2a9eb154d8e3eca",
+    "src/adts/policies.py": "5831210216cf820c6a55ac749c95fc0aed121dddead61e90ab5c79896ff7cf59",
+    "src/adts/vgdts_config.py": "5b8dbdd706a4110f600ea35e3b6f420d07ec3181b4b237891fa4112e095347d4",
+    "project_publication/__init__.py": "0dba48c54ffb426369d6ac08d3cf506c48fa21efcc0273e401e3d9219bc087d0",
+    "project_publication/__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+    "project_publication/cli.py": "46c409a04ba23e221846eb5f515dd8029d6ea60c501838f38283bb01bb1eda9f",
+    "project_publication/pipeline.py": "85957dce1c684d3dccdc93600a81dd48d94927dfe0b52d0369380ba28a7a0a9e",
+    "project_publication/reproduce.py": "d85604b232fc4f72e858ae397f565e6e6625658fcba7609a8b7be63e2176507b"
+  }
+}

@@ -17,46 +17,25 @@ from src.adts.envs import (
     random_drift_amplitude_means,
     slow_varying_sinusoid_means,
 )
-from src.adts.experiments import abrupt_means
+from src.adts.envs import abrupt_means
 from src.adts.oracle import run_dynamic_oracle
 from src.adts.policies import (
-    AdaSwitchParams,
     BetaSWTSParams,
-    CUSUMUCBParams,
     DTSParams,
-    DUCBParams,
-    DLinUCBParams,
-    GLRklUCBParams,
-    GammaSWGTSParams,
-    GlobalCTSParams,
     REXP3Params,
-    SWTSParams,
-    SWUCBParams,
     TSParams,
     VGdTSParams,
     dOTSParams,
     dTSParams,
-    run_VG_dTS_v21,
     run_DTS,
     run_REXP3,
     run_TS,
-    run_adaswitch,
+    run_VG_dTS,
     run_beta_swts,
-    run_cusum_ucb,
-    run_d_ucb,
-    run_dlinucb_onehot,
-    run_gamma_swgts,
-    run_glr_klucb,
-    run_global_cts,
     run_dOTS,
     run_dTS,
-    run_sw_ts,
-    run_sw_ucb,
 )
-from src.adts.vgdts_config import (
-    make_benchmark_vgdts_v21_params,
-    make_default_vgdts_v21_tuning_grid,
-)
+from src.adts.vgdts_config import make_benchmark_vgdts_params, make_default_vgdts_tuning_grid
 
 PolicyScalar = bool | int | float | str
 PolicyRunner = Callable[[np.ndarray, Any, np.random.Generator], np.ndarray]
@@ -68,15 +47,6 @@ ALGORITHM_ORDER: tuple[str, ...] = (
     "TS",
     "REXP3",
     "Dynamic TS",
-    "SW-UCB (0805.3415)",
-    "D-UCB (0805.3415)",
-    "CUSUM-UCB (1711.03539)",
-    "GLR-klUCB (1902.01575)",
-    "AdaSwitch (1902.07010)",
-    "SW-TS (Trovo 2020)",
-    "gamma-SWGTS (2409.05181)",
-    "Global-CTS (1302.3721)",
-    "D-LinUCB one-hot (1909.09146)",
     "Beta-SWTS",
 )
 
@@ -88,15 +58,6 @@ ALGORITHM_COLORS: dict[str, str] = {
     "TS": "#455A64",
     "REXP3": "#C62828",
     "Dynamic TS": "#8D6E63",
-    "SW-UCB (0805.3415)": "#3949AB",
-    "D-UCB (0805.3415)": "#00838F",
-    "CUSUM-UCB (1711.03539)": "#AD1457",
-    "GLR-klUCB (1902.01575)": "#6D4C41",
-    "AdaSwitch (1902.07010)": "#283593",
-    "SW-TS (Trovo 2020)": "#00897B",
-    "gamma-SWGTS (2409.05181)": "#5E35B1",
-    "Global-CTS (1302.3721)": "#7B1FA2",
-    "D-LinUCB one-hot (1909.09146)": "#F4511E",
     "Beta-SWTS": "#6A1B9A",
 }
 
@@ -131,22 +92,6 @@ class TunedPolicyEvaluation:
 class EnvironmentEvaluation:
     environment: EnvironmentSpec
     policies: dict[str, TunedPolicyEvaluation]
-
-
-@dataclass(frozen=True)
-class PublicationArtifacts:
-    single_env_plot: Path
-    single_env_summary_json: Path
-    original_envs_plot: Path
-    original_envs_summary_json: Path
-    random_signal_plot: Path
-    random_signal_summary_json: Path
-    oracle_environment_plots: dict[str, Path]
-    optimized_heatmap_plot: Path
-    optimized_heatmap_summary_json: Path
-    fixed_environment_plots: dict[str, Path]
-    fixed_heatmap_plot: Path
-    fixed_heatmap_summary_json: Path
 
 
 def _import_matplotlib_pyplot():
@@ -198,7 +143,7 @@ def _pure_random_signal_means(
 
 
 def build_publication_environment_suite(
-    horizon: int = 10_000,
+    horizon: int = 5000,
     n_arms: int = 4,
     seed: int = 0,
 ) -> list[EnvironmentSpec]:
@@ -215,8 +160,8 @@ def build_publication_environment_suite(
     """
     if horizon <= 0:
         raise ValueError("horizon must be > 0.")
-    if n_arms < 4:
-        raise ValueError("n_arms must be >= 4 for mixed-regime environment.")
+    if n_arms != 4:
+        raise ValueError("The paper suite requires exactly four arms.")
 
     breakpoint_min_segment = max(1, min(max(10, horizon // 150), horizon))
     breakpoint_max = min(16, max(1, horizon // breakpoint_min_segment - 1))
@@ -347,20 +292,6 @@ def _build_policy_candidates_tuned(
     rexp3_gamma_grid: list[float] | tuple[float, ...] | None = None,
     rexp3_delta_grid: list[int] | tuple[int, ...] | None = None,
     beta_swts_tau_grid: list[int] | tuple[int, ...] | None = None,
-    sw_ucb_tau_grid: list[int] | tuple[int, ...] | None = None,
-    d_ucb_gamma_grid: list[float] | tuple[float, ...] | None = None,
-    cusum_epsilon_grid: list[float] | tuple[float, ...] | None = None,
-    cusum_threshold_grid: list[float] | tuple[float, ...] | None = None,
-    glr_alpha_grid: list[float] | tuple[float, ...] | None = None,
-    glr_threshold_scale_grid: list[float] | tuple[float, ...] | None = None,
-    adaswitch_reset_threshold_grid: list[float] | tuple[float, ...] | None = None,
-    sw_ts_tau_grid: list[int] | tuple[int, ...] | None = None,
-    gamma_swgts_tau_grid: list[int] | tuple[int, ...] | None = None,
-    gamma_swgts_gamma_grid: list[float] | tuple[float, ...] | None = None,
-    global_cts_hazard_grid: list[float] | tuple[float, ...] | None = None,
-    global_cts_max_runlengths_grid: list[int] | tuple[int, ...] | None = None,
-    dlinucb_gamma_grid: list[float] | tuple[float, ...] | None = None,
-    dlinucb_delta_grid: list[float] | tuple[float, ...] | None = None,
     vgdts_params: VGdTSParams | None = None,
     vgdts_grid: dict[str, list[PolicyScalar] | tuple[PolicyScalar, ...]] | None = None,
 ) -> dict[str, list[PolicyCandidate]]:
@@ -388,34 +319,11 @@ def _build_policy_candidates_tuned(
             max(1000, horizon // 10),
         ]
     )
-    sw_ucb_tau_values = _coerce_sorted_unique_ints(sw_ucb_tau_grid or beta_tau_values)
-    d_ucb_gamma_values = _coerce_sorted_unique_floats(d_ucb_gamma_grid or [0.90, 0.95, 0.98, 0.99])
-    cusum_epsilon_values = _coerce_sorted_unique_floats(cusum_epsilon_grid or [0.025, 0.05, 0.10])
-    cusum_threshold_values = _coerce_sorted_unique_floats(cusum_threshold_grid or [4.0, 8.0, 12.0])
-    glr_alpha_values = _coerce_sorted_unique_floats(glr_alpha_grid or [0.5, 1.0, 1.5])
-    glr_threshold_scale_values = _coerce_sorted_unique_floats(glr_threshold_scale_grid or [1.0, 1.5, 2.0])
-    adaswitch_reset_threshold_values = _coerce_sorted_unique_floats(
-        adaswitch_reset_threshold_grid or [0.12, 0.18, 0.24]
-    )
-    sw_ts_tau_values = _coerce_sorted_unique_ints(sw_ts_tau_grid or beta_tau_values)
-    gamma_swgts_tau_values = _coerce_sorted_unique_ints(gamma_swgts_tau_grid or beta_tau_values)
-    gamma_swgts_gamma_values = _coerce_sorted_unique_floats(gamma_swgts_gamma_grid or [0.5, 0.7, 1.0])
-    global_cts_hazard_values = _coerce_sorted_unique_floats(global_cts_hazard_grid or [0.01, 0.02, 0.05])
-    global_cts_max_runlengths_values = _coerce_sorted_unique_ints(
-        global_cts_max_runlengths_grid
-        or [
-            max(80, horizon // 20),
-            max(160, horizon // 10),
-            max(320, horizon // 5),
-        ]
-    )
-    dlinucb_gamma_values = _coerce_sorted_unique_floats(dlinucb_gamma_grid or [0.95, 0.98, 0.99])
-    dlinucb_delta_values = _coerce_sorted_unique_floats(dlinucb_delta_grid or [0.01, 0.05, 0.10])
 
-    base_vgdts = make_benchmark_vgdts_v21_params() if vgdts_params is None else vgdts_params
+    base_vgdts = make_benchmark_vgdts_params() if vgdts_params is None else vgdts_params
 
     if vgdts_grid is None:
-        raw_vgdts_grid = make_default_vgdts_v21_tuning_grid()
+        raw_vgdts_grid = make_default_vgdts_tuning_grid()
     else:
         raw_vgdts_grid = {key: list(values) for key, values in vgdts_grid.items()}
 
@@ -438,7 +346,7 @@ def _build_policy_candidates_tuned(
         params = replace(base_vgdts, **overrides)
         vgdts_candidates.append(
             PolicyCandidate(
-                runner=run_VG_dTS_v21,
+                runner=run_VG_dTS,
                 params=params,
                 best_params=asdict(params),
             )
@@ -486,136 +394,6 @@ def _build_policy_candidates_tuned(
             )
             for lam in lam_values
         ],
-        "SW-UCB (0805.3415)": [
-            PolicyCandidate(
-                runner=run_sw_ucb,
-                params=SWUCBParams(tau=tau, xi=0.5),
-                best_params={"tau": tau, "xi": 0.5},
-            )
-            for tau in sw_ucb_tau_values
-        ],
-        "D-UCB (0805.3415)": [
-            PolicyCandidate(
-                runner=run_d_ucb,
-                params=DUCBParams(gamma=gamma, xi=0.5),
-                best_params={"gamma": gamma, "xi": 0.5},
-            )
-            for gamma in d_ucb_gamma_values
-        ],
-        "CUSUM-UCB (1711.03539)": [
-            PolicyCandidate(
-                runner=run_cusum_ucb,
-                params=CUSUMUCBParams(
-                    xi=0.5,
-                    epsilon=epsilon,
-                    threshold=threshold,
-                    warmup=max(20, horizon // 125),
-                    random_explore=0.05,
-                ),
-                best_params={
-                    "xi": 0.5,
-                    "epsilon": epsilon,
-                    "threshold": threshold,
-                    "warmup": max(20, horizon // 125),
-                    "random_explore": 0.05,
-                },
-            )
-            for epsilon in cusum_epsilon_values
-            for threshold in cusum_threshold_values
-        ],
-        "GLR-klUCB (1902.01575)": [
-            PolicyCandidate(
-                runner=run_glr_klucb,
-                params=GLRklUCBParams(
-                    alpha=alpha,
-                    threshold_scale=scale,
-                    min_segment_len=max(10, horizon // 250),
-                    max_history=max(200, horizon // 10),
-                ),
-                best_params={
-                    "alpha": alpha,
-                    "threshold_scale": scale,
-                    "min_segment_len": max(10, horizon // 250),
-                    "max_history": max(200, horizon // 10),
-                },
-            )
-            for alpha in glr_alpha_values
-            for scale in glr_threshold_scale_values
-        ],
-        "AdaSwitch (1902.07010)": [
-            PolicyCandidate(
-                runner=run_adaswitch,
-                params=AdaSwitchParams(
-                    xi=0.5,
-                    min_window=16,
-                    max_windows=8,
-                    reset_threshold=threshold,
-                    min_pulls_for_reset=40,
-                ),
-                best_params={
-                    "xi": 0.5,
-                    "min_window": 16,
-                    "max_windows": 8,
-                    "reset_threshold": threshold,
-                    "min_pulls_for_reset": 40,
-                },
-            )
-            for threshold in adaswitch_reset_threshold_values
-        ],
-        "SW-TS (Trovo 2020)": [
-            PolicyCandidate(
-                runner=run_sw_ts,
-                params=SWTSParams(alpha0=1.0, beta0=1.0, tau=tau),
-                best_params={"tau": tau},
-            )
-            for tau in sw_ts_tau_values
-        ],
-        "gamma-SWGTS (2409.05181)": [
-            PolicyCandidate(
-                runner=run_gamma_swgts,
-                params=GammaSWGTSParams(alpha0=1.0, beta0=1.0, tau=tau, gamma=gamma),
-                best_params={"tau": tau, "gamma": gamma},
-            )
-            for tau in gamma_swgts_tau_values
-            for gamma in gamma_swgts_gamma_values
-        ],
-        "Global-CTS (1302.3721)": [
-            PolicyCandidate(
-                runner=run_global_cts,
-                params=GlobalCTSParams(
-                    alpha0=1.0,
-                    beta0=1.0,
-                    hazard=hazard,
-                    max_runlengths=max_runlengths,
-                ),
-                best_params={"hazard": hazard, "max_runlengths": max_runlengths},
-            )
-            for hazard in global_cts_hazard_values
-            for max_runlengths in global_cts_max_runlengths_values
-        ],
-        "D-LinUCB one-hot (1909.09146)": [
-            PolicyCandidate(
-                runner=run_dlinucb_onehot,
-                params=DLinUCBParams(
-                    gamma=gamma,
-                    lambda_reg=1.0,
-                    delta=delta,
-                    sigma=0.5,
-                    action_norm_bound=1.0,
-                    theta_norm_bound=1.0,
-                ),
-                best_params={
-                    "gamma": gamma,
-                    "lambda_reg": 1.0,
-                    "delta": delta,
-                    "sigma": 0.5,
-                    "action_norm_bound": 1.0,
-                    "theta_norm_bound": 1.0,
-                },
-            )
-            for gamma in dlinucb_gamma_values
-            for delta in dlinucb_delta_values
-        ],
         "Beta-SWTS": [
             PolicyCandidate(
                 runner=run_beta_swts,
@@ -642,34 +420,16 @@ def _build_policy_candidates_fixed(
     rexp3_gamma: float = 0.1136,
     rexp3_delta: int | None = None,
     dynamic_c: float = 250.0,
-    sw_ucb_tau: int = 200,
-    d_ucb_gamma: float = 0.98,
-    cusum_epsilon: float = 0.05,
-    cusum_threshold: float = 8.0,
-    glr_alpha: float = 1.0,
-    glr_threshold_scale: float = 1.5,
-    adaswitch_reset_threshold: float = 0.18,
-    sw_ts_tau: int = 200,
-    gamma_swgts_tau: int = 200,
-    gamma_swgts_gamma: float = 0.7,
-    global_cts_hazard: float = 0.02,
-    global_cts_max_runlengths: int | None = None,
-    dlinucb_gamma: float = 0.98,
-    dlinucb_delta: float = 0.05,
     beta_swts_tau: int = 200,
 ) -> dict[str, list[PolicyCandidate]]:
+    _ = horizon
     delta = int(rexp3_delta if rexp3_delta is not None else 250)
-    vgdts_eff = make_benchmark_vgdts_v21_params() if vgdts_params is None else vgdts_params
-    max_runlengths = int(
-        global_cts_max_runlengths
-        if global_cts_max_runlengths is not None
-        else max(160, horizon // 10)
-    )
+    vgdts_eff = make_benchmark_vgdts_params() if vgdts_params is None else vgdts_params
 
     return {
         "VG-dTS": [
             PolicyCandidate(
-                runner=run_VG_dTS_v21,
+                runner=run_VG_dTS,
                 params=vgdts_eff,
                 best_params=asdict(vgdts_eff),
             )
@@ -707,122 +467,6 @@ def _build_policy_candidates_fixed(
                 runner=run_DTS,
                 params=DTSParams(alpha0=1.0, beta0=1.0, C=dynamic_c),
                 best_params={"C": dynamic_c},
-            )
-        ],
-        "SW-UCB (0805.3415)": [
-            PolicyCandidate(
-                runner=run_sw_ucb,
-                params=SWUCBParams(tau=sw_ucb_tau, xi=0.5),
-                best_params={"tau": sw_ucb_tau, "xi": 0.5},
-            )
-        ],
-        "D-UCB (0805.3415)": [
-            PolicyCandidate(
-                runner=run_d_ucb,
-                params=DUCBParams(gamma=d_ucb_gamma, xi=0.5),
-                best_params={"gamma": d_ucb_gamma, "xi": 0.5},
-            )
-        ],
-        "CUSUM-UCB (1711.03539)": [
-            PolicyCandidate(
-                runner=run_cusum_ucb,
-                params=CUSUMUCBParams(
-                    xi=0.5,
-                    epsilon=cusum_epsilon,
-                    threshold=cusum_threshold,
-                    warmup=max(20, horizon // 125),
-                    random_explore=0.05,
-                ),
-                best_params={
-                    "xi": 0.5,
-                    "epsilon": cusum_epsilon,
-                    "threshold": cusum_threshold,
-                    "warmup": max(20, horizon // 125),
-                    "random_explore": 0.05,
-                },
-            )
-        ],
-        "GLR-klUCB (1902.01575)": [
-            PolicyCandidate(
-                runner=run_glr_klucb,
-                params=GLRklUCBParams(
-                    alpha=glr_alpha,
-                    threshold_scale=glr_threshold_scale,
-                    min_segment_len=max(10, horizon // 250),
-                    max_history=max(200, horizon // 10),
-                ),
-                best_params={
-                    "alpha": glr_alpha,
-                    "threshold_scale": glr_threshold_scale,
-                    "min_segment_len": max(10, horizon // 250),
-                    "max_history": max(200, horizon // 10),
-                },
-            )
-        ],
-        "AdaSwitch (1902.07010)": [
-            PolicyCandidate(
-                runner=run_adaswitch,
-                params=AdaSwitchParams(
-                    xi=0.5,
-                    min_window=16,
-                    max_windows=8,
-                    reset_threshold=adaswitch_reset_threshold,
-                    min_pulls_for_reset=40,
-                ),
-                best_params={
-                    "xi": 0.5,
-                    "min_window": 16,
-                    "max_windows": 8,
-                    "reset_threshold": adaswitch_reset_threshold,
-                    "min_pulls_for_reset": 40,
-                },
-            )
-        ],
-        "SW-TS (Trovo 2020)": [
-            PolicyCandidate(
-                runner=run_sw_ts,
-                params=SWTSParams(alpha0=1.0, beta0=1.0, tau=sw_ts_tau),
-                best_params={"tau": sw_ts_tau},
-            )
-        ],
-        "gamma-SWGTS (2409.05181)": [
-            PolicyCandidate(
-                runner=run_gamma_swgts,
-                params=GammaSWGTSParams(alpha0=1.0, beta0=1.0, tau=gamma_swgts_tau, gamma=gamma_swgts_gamma),
-                best_params={"tau": gamma_swgts_tau, "gamma": gamma_swgts_gamma},
-            )
-        ],
-        "Global-CTS (1302.3721)": [
-            PolicyCandidate(
-                runner=run_global_cts,
-                params=GlobalCTSParams(
-                    alpha0=1.0,
-                    beta0=1.0,
-                    hazard=global_cts_hazard,
-                    max_runlengths=max_runlengths,
-                ),
-                best_params={"hazard": global_cts_hazard, "max_runlengths": max_runlengths},
-            )
-        ],
-        "D-LinUCB one-hot (1909.09146)": [
-            PolicyCandidate(
-                runner=run_dlinucb_onehot,
-                params=DLinUCBParams(
-                    gamma=dlinucb_gamma,
-                    lambda_reg=1.0,
-                    delta=dlinucb_delta,
-                    sigma=0.5,
-                    action_norm_bound=1.0,
-                    theta_norm_bound=1.0,
-                ),
-                best_params={
-                    "gamma": dlinucb_gamma,
-                    "lambda_reg": 1.0,
-                    "delta": dlinucb_delta,
-                    "sigma": 0.5,
-                    "action_norm_bound": 1.0,
-                    "theta_norm_bound": 1.0,
-                },
             )
         ],
         "Beta-SWTS": [
@@ -944,20 +588,6 @@ def evaluate_environment_suite(
     rexp3_gamma_grid: list[float] | tuple[float, ...] | None = None,
     rexp3_delta_grid: list[int] | tuple[int, ...] | None = None,
     beta_swts_tau_grid: list[int] | tuple[int, ...] | None = None,
-    sw_ucb_tau_grid: list[int] | tuple[int, ...] | None = None,
-    d_ucb_gamma_grid: list[float] | tuple[float, ...] | None = None,
-    cusum_epsilon_grid: list[float] | tuple[float, ...] | None = None,
-    cusum_threshold_grid: list[float] | tuple[float, ...] | None = None,
-    glr_alpha_grid: list[float] | tuple[float, ...] | None = None,
-    glr_threshold_scale_grid: list[float] | tuple[float, ...] | None = None,
-    adaswitch_reset_threshold_grid: list[float] | tuple[float, ...] | None = None,
-    sw_ts_tau_grid: list[int] | tuple[int, ...] | None = None,
-    gamma_swgts_tau_grid: list[int] | tuple[int, ...] | None = None,
-    gamma_swgts_gamma_grid: list[float] | tuple[float, ...] | None = None,
-    global_cts_hazard_grid: list[float] | tuple[float, ...] | None = None,
-    global_cts_max_runlengths_grid: list[int] | tuple[int, ...] | None = None,
-    dlinucb_gamma_grid: list[float] | tuple[float, ...] | None = None,
-    dlinucb_delta_grid: list[float] | tuple[float, ...] | None = None,
     vgdts_params: VGdTSParams | None = None,
     vgdts_grid: dict[str, list[PolicyScalar] | tuple[PolicyScalar, ...]] | None = None,
 ) -> dict[str, EnvironmentEvaluation]:
@@ -970,20 +600,6 @@ def evaluate_environment_suite(
             rexp3_gamma_grid=rexp3_gamma_grid,
             rexp3_delta_grid=rexp3_delta_grid,
             beta_swts_tau_grid=beta_swts_tau_grid,
-            sw_ucb_tau_grid=sw_ucb_tau_grid,
-            d_ucb_gamma_grid=d_ucb_gamma_grid,
-            cusum_epsilon_grid=cusum_epsilon_grid,
-            cusum_threshold_grid=cusum_threshold_grid,
-            glr_alpha_grid=glr_alpha_grid,
-            glr_threshold_scale_grid=glr_threshold_scale_grid,
-            adaswitch_reset_threshold_grid=adaswitch_reset_threshold_grid,
-            sw_ts_tau_grid=sw_ts_tau_grid,
-            gamma_swgts_tau_grid=gamma_swgts_tau_grid,
-            gamma_swgts_gamma_grid=gamma_swgts_gamma_grid,
-            global_cts_hazard_grid=global_cts_hazard_grid,
-            global_cts_max_runlengths_grid=global_cts_max_runlengths_grid,
-            dlinucb_gamma_grid=dlinucb_gamma_grid,
-            dlinucb_delta_grid=dlinucb_delta_grid,
             vgdts_params=vgdts_params,
             vgdts_grid=vgdts_grid,
         )
@@ -1009,20 +625,6 @@ def evaluate_environment_suite_fixed(
     rexp3_gamma: float = 0.1136,
     rexp3_delta: int | None = None,
     dynamic_c: float = 250.0,
-    sw_ucb_tau: int = 200,
-    d_ucb_gamma: float = 0.98,
-    cusum_epsilon: float = 0.05,
-    cusum_threshold: float = 8.0,
-    glr_alpha: float = 1.0,
-    glr_threshold_scale: float = 1.5,
-    adaswitch_reset_threshold: float = 0.18,
-    sw_ts_tau: int = 200,
-    gamma_swgts_tau: int = 200,
-    gamma_swgts_gamma: float = 0.7,
-    global_cts_hazard: float = 0.02,
-    global_cts_max_runlengths: int | None = None,
-    dlinucb_gamma: float = 0.98,
-    dlinucb_delta: float = 0.05,
     beta_swts_tau: int = 200,
 ) -> dict[str, EnvironmentEvaluation]:
     evaluations: dict[str, EnvironmentEvaluation] = {}
@@ -1036,20 +638,6 @@ def evaluate_environment_suite_fixed(
             rexp3_gamma=rexp3_gamma,
             rexp3_delta=rexp3_delta,
             dynamic_c=dynamic_c,
-            sw_ucb_tau=sw_ucb_tau,
-            d_ucb_gamma=d_ucb_gamma,
-            cusum_epsilon=cusum_epsilon,
-            cusum_threshold=cusum_threshold,
-            glr_alpha=glr_alpha,
-            glr_threshold_scale=glr_threshold_scale,
-            adaswitch_reset_threshold=adaswitch_reset_threshold,
-            sw_ts_tau=sw_ts_tau,
-            gamma_swgts_tau=gamma_swgts_tau,
-            gamma_swgts_gamma=gamma_swgts_gamma,
-            global_cts_hazard=global_cts_hazard,
-            global_cts_max_runlengths=global_cts_max_runlengths,
-            dlinucb_gamma=dlinucb_gamma,
-            dlinucb_delta=dlinucb_delta,
             beta_swts_tau=beta_swts_tau,
         )
         evaluations[env.key] = _evaluate_environment_with_candidates(
@@ -1090,18 +678,16 @@ def _plot_reward_regret_pair(
         ax_reward.plot(t, result.avg_reward_t, linewidth=1.2, color=color, label=label)
         ax_regret.plot(t, result.avg_norm_regret_t, linewidth=1.2, color=color, label=label)
 
-    legend_cols = 4 if len(ALGORITHM_ORDER) > 10 else 2
-
     ax_reward.set_ylabel("Average Reward")
     ax_reward.grid(alpha=0.25)
     if legend:
-        ax_reward.legend(fontsize=8, ncol=legend_cols)
+        ax_reward.legend(fontsize=8, ncol=2)
 
     ax_regret.set_xlabel("Timestep")
     ax_regret.set_ylabel("Normalized Regret")
     ax_regret.grid(alpha=0.25)
     if legend:
-        ax_regret.legend(fontsize=8, ncol=legend_cols)
+        ax_regret.legend(fontsize=8, ncol=2)
 
 
 def _plot_environment_reward_regret(
@@ -1127,19 +713,6 @@ def _plot_environment_reward_regret(
         plt.show()
     plt.close(fig)
     return output_path
-
-
-def plot_single_environment_tuning(
-    env_eval: EnvironmentEvaluation,
-    output_path: str | Path,
-    show: bool = False,
-) -> Path:
-    return _plot_environment_reward_regret(
-        env_eval=env_eval,
-        output_path=output_path,
-        title_prefix="Tuned Policies",
-        show=show,
-    )
 
 
 def plot_original_paper_environments(
@@ -1315,36 +888,6 @@ def plot_optimized_heatmap(
     return output_path
 
 
-def plot_fixed_environment_suite(
-    evaluations: dict[str, EnvironmentEvaluation],
-    output_dir: str | Path,
-    show: bool = False,
-) -> dict[str, Path]:
-    output_root = Path(output_dir)
-    output_root.mkdir(parents=True, exist_ok=True)
-
-    outputs: dict[str, Path] = {}
-    for key in [
-        "slow",
-        "fast",
-        "abrupt",
-        "mixed",
-        "random_breakpoints",
-        "random_drift",
-        "global_switching",
-        "per_arm_switching",
-    ]:
-        if key not in evaluations:
-            raise ValueError(f"Missing environment for fixed plot: {key}")
-        outputs[key] = _plot_environment_reward_regret(
-            env_eval=evaluations[key],
-            output_path=output_root / f"fixed_params_env_{key}.png",
-            title_prefix="Fixed Parameters",
-            show=show,
-        )
-    return outputs
-
-
 def _evaluation_to_json_dict(env_eval: EnvironmentEvaluation) -> dict[str, Any]:
     return {
         "environment": {
@@ -1362,376 +905,3 @@ def _evaluation_to_json_dict(env_eval: EnvironmentEvaluation) -> dict[str, Any]:
             for policy_name, policy_eval in env_eval.policies.items()
         },
     }
-
-
-def run_publication_bundle(
-    output_dir: str | Path = "report/project_publication",
-    horizon: int = 10_000,
-    n_arms: int = 4,
-    seed: int = 0,
-    tuning_runs: int = 40,
-    eval_runs: int = 120,
-    single_environment_key: str = "fast",
-    lambda_grid: list[float] | tuple[float, ...] | None = None,
-    rexp3_gamma_grid: list[float] | tuple[float, ...] | None = None,
-    rexp3_delta_grid: list[int] | tuple[int, ...] | None = None,
-    beta_swts_tau_grid: list[int] | tuple[int, ...] | None = None,
-    sw_ucb_tau_grid: list[int] | tuple[int, ...] | None = None,
-    d_ucb_gamma_grid: list[float] | tuple[float, ...] | None = None,
-    cusum_epsilon_grid: list[float] | tuple[float, ...] | None = None,
-    cusum_threshold_grid: list[float] | tuple[float, ...] | None = None,
-    glr_alpha_grid: list[float] | tuple[float, ...] | None = None,
-    glr_threshold_scale_grid: list[float] | tuple[float, ...] | None = None,
-    adaswitch_reset_threshold_grid: list[float] | tuple[float, ...] | None = None,
-    sw_ts_tau_grid: list[int] | tuple[int, ...] | None = None,
-    gamma_swgts_tau_grid: list[int] | tuple[int, ...] | None = None,
-    gamma_swgts_gamma_grid: list[float] | tuple[float, ...] | None = None,
-    global_cts_hazard_grid: list[float] | tuple[float, ...] | None = None,
-    global_cts_max_runlengths_grid: list[int] | tuple[int, ...] | None = None,
-    dlinucb_gamma_grid: list[float] | tuple[float, ...] | None = None,
-    dlinucb_delta_grid: list[float] | tuple[float, ...] | None = None,
-    vgdts_params: VGdTSParams | None = None,
-    vgdts_grid: dict[str, list[PolicyScalar] | tuple[PolicyScalar, ...]] | None = None,
-    fixed_dts_gamma: float = 0.75,
-    fixed_dots_gamma: float = 0.75,
-    fixed_rexp3_gamma: float = 0.1136,
-    fixed_rexp3_delta: int | None = None,
-    fixed_dynamic_c: float = 250.0,
-    fixed_sw_ucb_tau: int = 200,
-    fixed_d_ucb_gamma: float = 0.98,
-    fixed_cusum_epsilon: float = 0.05,
-    fixed_cusum_threshold: float = 8.0,
-    fixed_glr_alpha: float = 1.0,
-    fixed_glr_threshold_scale: float = 1.5,
-    fixed_adaswitch_reset_threshold: float = 0.18,
-    fixed_sw_ts_tau: int = 200,
-    fixed_gamma_swgts_tau: int = 200,
-    fixed_gamma_swgts_gamma: float = 0.7,
-    fixed_global_cts_hazard: float = 0.02,
-    fixed_global_cts_max_runlengths: int | None = None,
-    fixed_dlinucb_gamma: float = 0.98,
-    fixed_dlinucb_delta: float = 0.05,
-    fixed_beta_swts_tau: int = 200,
-    show: bool = False,
-) -> PublicationArtifacts:
-    """
-    Build publication-ready artifacts.
-
-    Optimized/tuned outputs:
-      - single environment tuned comparison
-      - original paper environments tuned comparison (Slow/Fast/Abrupt)
-      - pure random-signal tuned comparison
-      - optimized heatmap on 8 environments
-
-    Fixed-parameter outputs:
-      - one reward/regret figure per each of the 8 environments
-      - fixed-parameter heatmap on same 8 environments
-
-    Environment-only outputs:
-      - one oracle+means figure per environment (no oracle arm-selection subplot)
-      - includes pure random signal environment means figure
-    """
-    if horizon <= 0:
-        raise ValueError("horizon must be > 0.")
-    if n_arms < 4:
-        raise ValueError("n_arms must be >= 4.")
-
-    output_root = Path(output_dir)
-    fig_dir = output_root / "figures"
-    results_dir = output_root / "results"
-
-    env_suite = build_publication_environment_suite(horizon=horizon, n_arms=n_arms, seed=seed)
-
-    optimized_evaluations = evaluate_environment_suite(
-        env_suite=env_suite,
-        tuning_runs=tuning_runs,
-        eval_runs=eval_runs,
-        seed=seed,
-        lambda_grid=lambda_grid,
-        rexp3_gamma_grid=rexp3_gamma_grid,
-        rexp3_delta_grid=rexp3_delta_grid,
-        beta_swts_tau_grid=beta_swts_tau_grid,
-        sw_ucb_tau_grid=sw_ucb_tau_grid,
-        d_ucb_gamma_grid=d_ucb_gamma_grid,
-        cusum_epsilon_grid=cusum_epsilon_grid,
-        cusum_threshold_grid=cusum_threshold_grid,
-        glr_alpha_grid=glr_alpha_grid,
-        glr_threshold_scale_grid=glr_threshold_scale_grid,
-        adaswitch_reset_threshold_grid=adaswitch_reset_threshold_grid,
-        sw_ts_tau_grid=sw_ts_tau_grid,
-        gamma_swgts_tau_grid=gamma_swgts_tau_grid,
-        gamma_swgts_gamma_grid=gamma_swgts_gamma_grid,
-        global_cts_hazard_grid=global_cts_hazard_grid,
-        global_cts_max_runlengths_grid=global_cts_max_runlengths_grid,
-        dlinucb_gamma_grid=dlinucb_gamma_grid,
-        dlinucb_delta_grid=dlinucb_delta_grid,
-        vgdts_params=vgdts_params,
-        vgdts_grid=vgdts_grid,
-    )
-
-    fixed_evaluations = evaluate_environment_suite_fixed(
-        env_suite=env_suite,
-        eval_runs=eval_runs,
-        seed=seed + 4_000_000,
-        vgdts_params=vgdts_params,
-        dts_gamma=fixed_dts_gamma,
-        dots_gamma=fixed_dots_gamma,
-        rexp3_gamma=fixed_rexp3_gamma,
-        rexp3_delta=fixed_rexp3_delta,
-        dynamic_c=fixed_dynamic_c,
-        sw_ucb_tau=fixed_sw_ucb_tau,
-        d_ucb_gamma=fixed_d_ucb_gamma,
-        cusum_epsilon=fixed_cusum_epsilon,
-        cusum_threshold=fixed_cusum_threshold,
-        glr_alpha=fixed_glr_alpha,
-        glr_threshold_scale=fixed_glr_threshold_scale,
-        adaswitch_reset_threshold=fixed_adaswitch_reset_threshold,
-        sw_ts_tau=fixed_sw_ts_tau,
-        gamma_swgts_tau=fixed_gamma_swgts_tau,
-        gamma_swgts_gamma=fixed_gamma_swgts_gamma,
-        global_cts_hazard=fixed_global_cts_hazard,
-        global_cts_max_runlengths=fixed_global_cts_max_runlengths,
-        dlinucb_gamma=fixed_dlinucb_gamma,
-        dlinucb_delta=fixed_dlinucb_delta,
-        beta_swts_tau=fixed_beta_swts_tau,
-    )
-
-    single_env = _build_single_environment(
-        key=single_environment_key,
-        horizon=horizon,
-        n_arms=n_arms,
-        seed=seed,
-    )
-    if single_env.key in optimized_evaluations:
-        single_eval = optimized_evaluations[single_env.key]
-    else:
-        candidates = _build_policy_candidates_tuned(
-            horizon=int(single_env.means_tk.shape[0]),
-            lambda_grid=lambda_grid,
-            rexp3_gamma_grid=rexp3_gamma_grid,
-            rexp3_delta_grid=rexp3_delta_grid,
-            beta_swts_tau_grid=beta_swts_tau_grid,
-            sw_ucb_tau_grid=sw_ucb_tau_grid,
-            d_ucb_gamma_grid=d_ucb_gamma_grid,
-            cusum_epsilon_grid=cusum_epsilon_grid,
-            cusum_threshold_grid=cusum_threshold_grid,
-            glr_alpha_grid=glr_alpha_grid,
-            glr_threshold_scale_grid=glr_threshold_scale_grid,
-            adaswitch_reset_threshold_grid=adaswitch_reset_threshold_grid,
-            sw_ts_tau_grid=sw_ts_tau_grid,
-            gamma_swgts_tau_grid=gamma_swgts_tau_grid,
-            gamma_swgts_gamma_grid=gamma_swgts_gamma_grid,
-            global_cts_hazard_grid=global_cts_hazard_grid,
-            global_cts_max_runlengths_grid=global_cts_max_runlengths_grid,
-            dlinucb_gamma_grid=dlinucb_gamma_grid,
-            dlinucb_delta_grid=dlinucb_delta_grid,
-            vgdts_params=vgdts_params,
-            vgdts_grid=vgdts_grid,
-        )
-        single_eval = _evaluate_environment_with_candidates(
-            env=single_env,
-            candidates_by_policy=candidates,
-            eval_runs=eval_runs,
-            seed=seed + 8_000_000,
-            tuning_runs=tuning_runs,
-        )
-
-    random_signal_env = _build_single_environment(
-        key="random_signal",
-        horizon=horizon,
-        n_arms=n_arms,
-        seed=seed,
-    )
-    random_signal_candidates = _build_policy_candidates_tuned(
-        horizon=int(random_signal_env.means_tk.shape[0]),
-        lambda_grid=lambda_grid,
-        rexp3_gamma_grid=rexp3_gamma_grid,
-        rexp3_delta_grid=rexp3_delta_grid,
-        beta_swts_tau_grid=beta_swts_tau_grid,
-        sw_ucb_tau_grid=sw_ucb_tau_grid,
-        d_ucb_gamma_grid=d_ucb_gamma_grid,
-        cusum_epsilon_grid=cusum_epsilon_grid,
-        cusum_threshold_grid=cusum_threshold_grid,
-        glr_alpha_grid=glr_alpha_grid,
-        glr_threshold_scale_grid=glr_threshold_scale_grid,
-        adaswitch_reset_threshold_grid=adaswitch_reset_threshold_grid,
-        sw_ts_tau_grid=sw_ts_tau_grid,
-        gamma_swgts_tau_grid=gamma_swgts_tau_grid,
-        gamma_swgts_gamma_grid=gamma_swgts_gamma_grid,
-        global_cts_hazard_grid=global_cts_hazard_grid,
-        global_cts_max_runlengths_grid=global_cts_max_runlengths_grid,
-        dlinucb_gamma_grid=dlinucb_gamma_grid,
-        dlinucb_delta_grid=dlinucb_delta_grid,
-        vgdts_params=vgdts_params,
-        vgdts_grid=vgdts_grid,
-    )
-    random_signal_eval = _evaluate_environment_with_candidates(
-        env=random_signal_env,
-        candidates_by_policy=random_signal_candidates,
-        eval_runs=eval_runs,
-        seed=seed + 9_000_000,
-        tuning_runs=tuning_runs,
-    )
-
-    single_env_plot = plot_single_environment_tuning(
-        env_eval=single_eval,
-        output_path=fig_dir / f"single_env_tuned_{single_eval.environment.key}.png",
-        show=show,
-    )
-    original_envs_plot = plot_original_paper_environments(
-        evaluations=optimized_evaluations,
-        output_path=fig_dir / "original_paper_envs_tuned.png",
-        show=show,
-    )
-    random_signal_plot = plot_random_signal_failure(
-        env_eval=random_signal_eval,
-        output_path=fig_dir / "rigorous_pure_random_signal_tuned.png",
-        show=show,
-    )
-
-    oracle_environment_plots = plot_environment_oracle_gallery(
-        env_suite=env_suite,
-        output_dir=fig_dir / "environment_oracle",
-        show=show,
-    )
-    oracle_environment_plots[random_signal_env.key] = plot_environment_with_oracle(
-        env_spec=random_signal_env,
-        output_path=fig_dir / "environment_oracle" / f"environment_oracle_{random_signal_env.key}.png",
-        show=show,
-    )
-
-    optimized_heatmap_plot = plot_optimized_heatmap(
-        evaluations=optimized_evaluations,
-        output_path=fig_dir / "optimized_heatmap_8env_16policies.png",
-        title="Optimized Final Normalized Regret",
-        show=show,
-    )
-
-    fixed_environment_plots = plot_fixed_environment_suite(
-        evaluations=fixed_evaluations,
-        output_dir=fig_dir / "fixed_params_envs",
-        show=show,
-    )
-    fixed_heatmap_plot = plot_optimized_heatmap(
-        evaluations=fixed_evaluations,
-        output_path=fig_dir / "fixed_params_heatmap_8env_16policies.png",
-        title="Fixed-Parameter Final Normalized Regret",
-        show=show,
-    )
-
-    single_summary = _save_json(
-        results_dir / f"single_env_tuned_{single_eval.environment.key}.json",
-        _evaluation_to_json_dict(single_eval),
-    )
-    original_summary = _save_json(
-        results_dir / "original_paper_envs_tuned.json",
-        {
-            key: _evaluation_to_json_dict(env_eval)
-            for key, env_eval in optimized_evaluations.items()
-            if key in {"slow", "fast", "abrupt"}
-        },
-    )
-    random_summary = _save_json(
-        results_dir / "rigorous_pure_random_signal_tuned.json",
-        _evaluation_to_json_dict(random_signal_eval),
-    )
-
-    optimized_heatmap_summary = _save_json(
-        results_dir / "optimized_heatmap_8env_16policies.json",
-        {
-            "algorithms": list(ALGORITHM_ORDER),
-            "algorithm_colors": ALGORITHM_COLORS,
-            "mode": "optimized",
-            "evaluations": {
-                key: _evaluation_to_json_dict(env_eval)
-                for key, env_eval in optimized_evaluations.items()
-            },
-        },
-    )
-    fixed_heatmap_summary = _save_json(
-        results_dir / "fixed_params_heatmap_8env_16policies.json",
-        {
-            "algorithms": list(ALGORITHM_ORDER),
-            "algorithm_colors": ALGORITHM_COLORS,
-            "mode": "fixed",
-            "fixed_parameters": {
-                "VG-dTS": asdict(vgdts_params if vgdts_params is not None else make_benchmark_vgdts_v21_params()),
-                "dTS": {"gamma": fixed_dts_gamma},
-                "dOTS": {"gamma": fixed_dots_gamma},
-                "TS": {},
-                "REXP3": {
-                    "gamma": fixed_rexp3_gamma,
-                    "Delta": int(250 if fixed_rexp3_delta is None else fixed_rexp3_delta),
-                },
-                "Dynamic TS": {"C": fixed_dynamic_c},
-                "SW-UCB (0805.3415)": {"tau": fixed_sw_ucb_tau, "xi": 0.5},
-                "D-UCB (0805.3415)": {"gamma": fixed_d_ucb_gamma, "xi": 0.5},
-                "CUSUM-UCB (1711.03539)": {
-                    "xi": 0.5,
-                    "epsilon": fixed_cusum_epsilon,
-                    "threshold": fixed_cusum_threshold,
-                    "warmup": max(20, horizon // 125),
-                    "random_explore": 0.05,
-                },
-                "GLR-klUCB (1902.01575)": {
-                    "alpha": fixed_glr_alpha,
-                    "threshold_scale": fixed_glr_threshold_scale,
-                    "min_segment_len": max(10, horizon // 250),
-                    "max_history": max(200, horizon // 10),
-                },
-                "AdaSwitch (1902.07010)": {
-                    "xi": 0.5,
-                    "min_window": 16,
-                    "max_windows": 8,
-                    "reset_threshold": fixed_adaswitch_reset_threshold,
-                    "min_pulls_for_reset": 40,
-                },
-                "SW-TS (Trovo 2020)": {"tau": fixed_sw_ts_tau},
-                "gamma-SWGTS (2409.05181)": {
-                    "tau": fixed_gamma_swgts_tau,
-                    "gamma": fixed_gamma_swgts_gamma,
-                },
-                "Beta-SWTS": {"tau": fixed_beta_swts_tau},
-            },
-            "evaluations": {
-                key: _evaluation_to_json_dict(env_eval)
-                for key, env_eval in fixed_evaluations.items()
-            },
-        },
-    )
-
-    return PublicationArtifacts(
-        single_env_plot=single_env_plot,
-        single_env_summary_json=single_summary,
-        original_envs_plot=original_envs_plot,
-        original_envs_summary_json=original_summary,
-        random_signal_plot=random_signal_plot,
-        random_signal_summary_json=random_summary,
-        oracle_environment_plots=oracle_environment_plots,
-        optimized_heatmap_plot=optimized_heatmap_plot,
-        optimized_heatmap_summary_json=optimized_heatmap_summary,
-        fixed_environment_plots=fixed_environment_plots,
-        fixed_heatmap_plot=fixed_heatmap_plot,
-        fixed_heatmap_summary_json=fixed_heatmap_summary,
-    )
-
-
-__all__ = [
-    "ALGORITHM_COLORS",
-    "ALGORITHM_ORDER",
-    "EnvironmentEvaluation",
-    "EnvironmentSpec",
-    "PublicationArtifacts",
-    "TunedPolicyEvaluation",
-    "build_publication_environment_suite",
-    "evaluate_environment_suite",
-    "evaluate_environment_suite_fixed",
-    "plot_environment_oracle_gallery",
-    "plot_environment_with_oracle",
-    "plot_fixed_environment_suite",
-    "plot_optimized_heatmap",
-    "plot_original_paper_environments",
-    "plot_random_signal_failure",
-    "plot_single_environment_tuning",
-    "run_publication_bundle",
-]
