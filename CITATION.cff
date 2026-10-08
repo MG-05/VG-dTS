@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: >-
+  If you use VG-dTS, please cite the accompanying manuscript using the
+  preferred citation below and identify the software version or commit used.
+type: software
+title: "VG-dTS: Variance-Gated Discounted Thompson Sampling for Non-Stationary Bandits"
+authors:
+  - family-names: Gulati
+    given-names: Mayand
+    affiliation: "University of California, Santa Barbara"
+  - family-names: Wang
+    given-names: Kerong
+    affiliation: "University of California, Santa Barbara"
+  - family-names: Au
+    given-names: Wei-Chen
+    affiliation: "University of California, Santa Barbara"
+repository-code: "https://github.com/MG-05/VG-dTS"
+version: 1.0.0
+license: Apache-2.0
+keywords:
+  - non-stationary bandits
+  - Thompson sampling
+  - adaptive discounting
+preferred-citation:
+  type: unpublished
+  title: "Variance-Gated Discounted Thompson Sampling for Non-Stationary Bandits"
+  authors:
+    - family-names: Gulati
+      given-names: Mayand
+    - family-names: Wang
+      given-names: Kerong
+    - family-names: Au
+      given-names: Wei-Chen
+  notes: "Unpublished manuscript. University of California, Santa Barbara."
+  url: "https://github.com/MG-05/VG-dTS/blob/main/report/ECE_270_Project_Publication/main.tex"

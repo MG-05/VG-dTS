@@ -14,6 +14,8 @@
   <a href="results/paper/">Reference results</a>
   &nbsp;·&nbsp;
   <a href="src/adts/policies.py">Implementation</a>
+  &nbsp;·&nbsp;
+  <a href="CITATION.cff">Cite this work</a>
 </p>
 
 ---
@@ -123,7 +125,7 @@ either panel to inspect the full-resolution figure.*
 **Scope of the evidence.** The average advantage does not imply a win in every
 regime. Surprise is an indirect signal of change, other methods lead in several
 environments, and the pure-random-signal control leaves little room for
-improvement. See the [methodological notes](REPRODUCIBILITY.md#details-the-manuscript-should-clarify-before-publication)
+improvement. See the [methodological notes](REPRODUCIBILITY.md#experimental-clarifications-and-limitations)
 for tuning budgets, gate settings, and the limits of these comparisons.
 
 ## 3. Reproduce the results
@@ -159,6 +161,21 @@ All **119 reported evaluation values** were reproduced exactly during validation
 this checks evaluation at the archived settings, not a new tuning search.
 [Full instructions](REPRODUCIBILITY.md) cover retuning, smoke tests, figure
 regeneration, manuscript compilation, and the validation record.
+
+## Citation
+
+Please cite the accompanying manuscript and identify the software version or
+commit used for your experiments. [CITATION.cff](CITATION.cff) provides structured
+metadata for the manuscript and software; the manuscript is listed as unpublished.
+
+```bibtex
+@unpublished{gulati_vgdts,
+  author = {Gulati, Mayand and Wang, Kerong and Au, Wei-Chen},
+  title = {Variance-Gated Discounted Thompson Sampling for Non-Stationary Bandits},
+  note = {Unpublished manuscript. University of California, Santa Barbara},
+  url = {https://github.com/MG-05/VG-dTS}
+}
+```
 
 ## License
 

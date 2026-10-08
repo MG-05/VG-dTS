@@ -62,7 +62,7 @@ Those results are not eligible for exact paper verification.
 
 **Cleanup validation:** all 119 archived evaluation values were reproduced with
 zero numerical difference; 23 tests pass; all 12 figures regenerate; the paper
-builds to 17 pages. The initial audit used NumPy 2.5.2, with both breakpoint jobs
+built to 17 pages before the manuscript corrections. The initial audit used NumPy 2.5.2, with both breakpoint jobs
 rerun under 1.26.4 after diagnosing a random-generator compatibility difference.
 New runs use the pinned 1.26.4 environment throughout. The full tuning search was
 not rerun during cleanup. The sections below describe provenance and paper/code caveats.
@@ -142,16 +142,20 @@ sh artifacts/rebuilt-paper/build.sh
 - `project_publication/reproduce.py`: replay, retuning, persisted results, and checks.
 - `tests/`: algorithm, environment, archival-integrity, and integration checks.
 
-The cleanup preserves the manuscript text and its results. Scientific
-interpretation issues are listed below. Original project content is licensed
+The cleanup preserved the original results. The manuscript was subsequently
+corrected against the implementation and archived settings; scientific
+interpretation limits are listed below. Original project content is licensed
 under the [Apache License 2.0](LICENSE). Bundled third-party LaTeX styles retain
 their upstream terms and notices; see [NOTICE](NOTICE).
 
 ## What was preserved and recovered
 
-The manuscript, appendix, bibliography, macros, and 12 figures referenced by the
-manuscript are unchanged. Their original export hashes are retained in
-`report/ECE_270_Project_Publication/OVERLEAF_MANIFEST.json`. Unused figures and
+The bibliography, macros, and 12 figures referenced by the manuscript are
+unchanged. `main.tex` and `appendix.tex` were subsequently revised to describe
+the actual experiments; see the [manuscript correction record](report/ECE_270_Project_Publication/MANUSCRIPT_CHANGES.md).
+Original export hashes remain in
+`report/ECE_270_Project_Publication/OVERLEAF_MANIFEST.json` as historical provenance,
+not checksums for the revised manuscript sources. Unused figures and
 superseded report directories were removed. The three canonical numerical
 summaries in `results/paper/` are byte-identical copies from the inherited
 `report/project_publication_final/results/` directory. The separate canonical
@@ -226,33 +230,37 @@ independence across all cells should not be claimed. The replay retains these
 seeds to reproduce the original results. Changing this schedule would create a
 new experiment.
 
-## Details the manuscript should clarify before publication
+## Experimental clarifications and limitations
 
-These are documented rather than silently changing the manuscript or results:
+The manuscript now states the following explicitly. These are descriptions of
+retained experiments, not changes to the algorithms or numerical results.
 
-1. **Optimistic action selection.** Every archived VG-dTS setting has
+1. **Optimistic action selection.** Every archived VG-dTS setting uses
    `optimistic=True`: actions maximize `max(Beta sample, posterior mean)`.
-   The main algorithm shows ordinary TS action selection. The appendix mentions
-   optimism as optional, but the reported implementation actually enables it.
-2. **Reliability gate.** The fixed protocol uses `n0=0`, so its gate opens fully
-   after an arm has positive effective evidence. Most tuned settings also use
-   zero. Claims that a gradual reliability gate explains these gains need
-   qualification or a separate controlled comparison.
+   The pseudocode and experimental description specify this configuration.
+2. **Reliability gate.** All fixed settings and seven of eight tuned suite
+   settings use `n0=0`, so the gate opens fully whenever effective evidence is
+   positive. Only the tuned `fast` setting uses `n0=25`. These comparisons do
+   not establish a benefit from gradual reliability gating.
 3. **Unequal search sizes.** VG-dTS has 64 candidates; dTS, dOTS, and Dynamic TS
-   have 7 each; TS has 1; REXP3 has 15; Beta-SWTS has 5. The manuscript's
-   "comparable breadth" phrase should not be read as an equal tuning budget.
-4. **Dynamic TS is thresholded discounting.** The implementation discounts the
-   played arm when its posterior mass exceeds C. It does not run an explicit
-   changepoint test or hard-reset all posteriors. Some manuscript descriptions
-   characterize this more strongly as reset/change detection.
-5. **The tuned parameter table is abbreviated.** Use the archived `best_params`
-   dictionaries for exact settings, especially `optimistic`, `vol_high`, and the
-   other parameters omitted from the printed tuples. The implementation clips
-   `gamma_default` into `[gamma_min, gamma_max]` before mixing.
-6. **Conditional simulation evidence.** Repeated reward runs on one environment
-   realization do not establish robustness over independent environment draws.
-   No confidence intervals or claims of statistical significance are added by
-   this cleanup.
+   have 7 each; TS has 1; REXP3 has 15; Beta-SWTS has 5. Equal rollouts per
+   candidate do not imply equal tuning budgets.
+4. **Dynamic TS is thresholded discounting.** Before incorporating the reward,
+   the implementation discounts the played arm's full posterior parameters
+   when their sum exceeds C. It does not perform changepoint testing or hard
+   posterior resets.
+5. **Parameter summaries and exact settings.** The paper specifies shared
+   constants, optimistic scoring, and inverse-linear thresholds (`vol_high=3.5`
+   for all eight tuned suite settings; `2.6` for fixed settings). Table entries
+   include rounded baseline values; use archived `best_params` dictionaries
+   for full precision. Supplied `gamma_default` is clipped to
+   `[gamma_min, gamma_max]` before mixing.
+6. **Conditional simulation evidence.** Reward/policy rollouts share one mean
+   trajectory per environment, with some seed streams reused across cells.
+   There are no confidence intervals, significance tests, or component ablations
+   in these reported comparisons. The archive does not establish independent
+   selection of fixed defaults. Reconstructed evaluation replay is verified;
+   an independent full tuning search remains unverified.
 
 ## Scope and recovery
 
@@ -263,7 +271,7 @@ build products. Applicable tests were retained or updated. Local IDE settings
 are ignored. `.sty` files are no longer ignored, so a fresh clone includes the
 paper's build dependencies.
 
-Git history was not rewritten and no changes were committed or pushed. Earlier
+The cleanup did not rewrite Git history. Earlier
 commits still contain the removed work; a paper-only *history* would require a
 separate export or history rewrite. The cleanup also made a temporary local
 recovery copy of pre-existing workspace files before deleting obsolete files.

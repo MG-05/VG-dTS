@@ -1,7 +1,7 @@
 \documentclass{article}
 
 
-\usepackage{neurips_2025}
+\usepackage[preprint]{neurips_2025}
 
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
@@ -23,6 +23,11 @@
 
 \input{cmd.tex}
 \input{pkg}
+\hypersetup{
+  hidelinks,
+  pdftitle={Variance-Gated Discounted Thompson Sampling for Non-Stationary Bandits},
+  pdfauthor={Mayand Gulati, Kerong Wang, Wei-Chen Au}
+}
 
 
 \title{Variance-Gated Discounted Thompson Sampling for Non-Stationary Bandits}
@@ -51,7 +56,7 @@
 
 
 \begin{abstract}
- We study learning in non-stationary Bernoulli multi-armed bandits, where arm rewards evolve over time without assuming any specific trend. While Thompson Sampling (TS) performs well in stationary settings, it adapts slowly when rewards change. Discounted Thompson Sampling (dTS) improves responsiveness by exponentially forgetting past observations, but a single fixed discount factor creates a tradeoff between fast adaptation and stability. We propose Variance-Gated Discounted Thompson Sampling (VG-dTS), which treats non-stationarity as a latent signal and estimates volatility online from posterior prediction errors to dynamically adjust the discount factor. Experiments on multiple non-stationary environments compare VG-dTS against TS, dTS, dOTS, REXP3, Dynamic TS, and Beta-SWTS. Across the full eight-environment suite, VG-dTS achieves the lowest tuned average normalized regret (0.1047) and the lowest fixed-parameter average normalized regret (0.1351), with strong gains in abrupt and mixed regimes.
+ We study learning in non-stationary Bernoulli multi-armed bandits, where arm rewards evolve over time without assuming any specific trend. While Thompson Sampling (TS) performs well in stationary settings, it adapts slowly when rewards change. Discounted Thompson Sampling (dTS) improves responsiveness by exponentially forgetting past observations, but a single fixed discount factor creates a tradeoff between fast adaptation and stability. We propose Variance-Gated Discounted Thompson Sampling (VG-dTS), which treats non-stationarity as a latent signal and estimates volatility online from posterior prediction errors to dynamically adjust the discount factor. Experiments on multiple non-stationary environments compare VG-dTS against TS, dTS, dOTS, REXP3, Dynamic TS, and Beta-SWTS. Across the full eight-environment suite, VG-dTS achieves the lowest tuned average normalized regret (0.1047) and the lowest fixed-parameter average normalized regret (0.1351) on the evaluated realizations. These comparisons use unequal tuning grids and do not establish statistical significance or isolate the contribution of each algorithmic component.
 \end{abstract}
 
 
@@ -61,15 +66,15 @@ The multi-armed bandit (MAB) problem studies sequential decision-making under un
 
 Many practical systems are non-stationary: reward distributions drift, switch, or evolve over time. This introduces a core tradeoff between retaining useful history and forgetting stale evidence. Prior work addresses this challenge through switching-bandit analyses \cite{garivier2011switching,hartland2007,besbes2014}, sliding-window estimators \cite{trovo2020}, change-detection mechanisms \cite{liu2018change}, and discounted Bayesian updates such as discounted TS (dTS) \cite{raj2017taming}. A persistent issue is sensitivity to manually chosen forgetting rates.
 
-We propose Variance-Gated Discounted Thompson Sampling (VG-dTS), an adaptive-forgetting variant of TS for non-stationary Bernoulli bandits. VG-dTS estimates arm-wise volatility from standardized posterior prediction errors and maps this signal to time-varying discount factors. A reliability gate keeps the policy conservative in low-data regimes, then gradually shifts toward volatility-driven adaptation as evidence accumulates.
+We propose Variance-Gated Discounted Thompson Sampling (VG-dTS), an adaptive-forgetting variant of TS for non-stationary Bernoulli bandits. VG-dTS estimates arm-wise volatility from standardized posterior prediction errors and maps this signal to time-varying discount factors. A configurable reliability gate can blend a default discount with volatility-driven adaptation when evidence is scarce. A gradual blend requires $n_0>0$; the fixed protocol and seven of eight tuned settings instead use $n_0=0$, which opens the gate fully whenever effective evidence is positive.
 
-Our empirical study evaluates VG-dTS on eight non-stationary environments and compares against strong baselines used throughout this paper: TS, dTS, dOTS, REXP3, Dynamic TS, and Beta-SWTS. Across tuned and fixed-parameter protocols, VG-dTS improves average normalized regret while maintaining robust performance across heterogeneous dynamics.
+Our empirical study evaluates VG-dTS on eight non-stationary environments and compares against strong baselines used throughout this paper: TS, dTS, dOTS, REXP3, Dynamic TS, and Beta-SWTS. Across tuned and fixed-parameter protocols, VG-dTS achieves the lowest average normalized regret on the eight evaluated environment realizations, although other methods lead in several individual environments.
 
 \paragraph{Contributions.}
 This paper makes three concrete contributions.
 First, we propose VG-dTS: a Thompson-style non-stationary bandit policy that couples prior-preserving discounting with arm-wise volatility gating.
 Second, we provide a unified experimental framework over eight environments that span periodic drift, abrupt changes, mixed dynamics, and stochastic switching, and we evaluate under both tuned and fixed-parameter protocols.
-Third, we show that VG-dTS is competitive across regimes while improving cross-environment robustness relative to fixed-discount TS variants.
+Third, we report a lower eight-environment average regret than the evaluated fixed-discount TS variants under both protocols, while documenting the scope and limitations of this comparison.
 
 \section{Related Work}
 Non-stationary bandits have been studied through multiple lenses. Foundational analyses characterize switching and variation-budget settings and show the central tradeoff between adaptation and estimation stability \cite{garivier2011switching,hartland2007,besbes2014}. Practical methods include sliding-window estimators \cite{trovo2020}, explicit change-detection approaches \cite{liu2018change}, and discounted Bayesian updates such as dTS \cite{raj2017taming}.
@@ -155,7 +160,7 @@ A \emph{prior-preserving discount} step with discount factor $\gamma\in(0,1]$ is
 \beta_k \leftarrow 1+\gamma(\beta_k-1).
 \label{eq:prior_preserving_discount}
 \end{equation}
-This transformation leaves the uniform prior $\mathrm{Beta}(1,1)$ unchanged and scales the effective evidence $(\alpha_k+\beta_k-2)$ by approximately $\gamma$.
+This transformation leaves the uniform prior $\mathrm{Beta}(1,1)$ unchanged and scales the effective evidence $(\alpha_k+\beta_k-2)$ by exactly $\gamma$ before the reward update.
 Intuitively, smaller $\gamma$ means faster forgetting and quicker adaptation, but also higher estimation variance.
 
 A core limitation of fixed-$\gamma$ methods is that the ``right'' forgetting rate depends on \emph{both} the environment dynamics and the amount of data collected:
@@ -163,7 +168,7 @@ when the arm behavior is stable, aggressive forgetting wastes information; when 
 Therefore, we propose VG-dTS (Algorithm \ref{alg:vgdts}). It replaces the single global $\gamma$ by \emph{arm-wise, time-varying} discounts $\gamma_{k,t}$ driven by an online estimate of non-stationarity.
 
 \subsection{Standardized surprise as a change signal}
-At round $t$, VG-dTS forms a Thompson sample for each arm and selects $A_t$ as in standard TS.
+At round $t$, VG-dTS forms a Thompson sample for each arm. All reported VG-dTS experiments select $A_t$ using the optimistic score $\max\{\widetilde{\mu}_{k,t},\bar{\mu}_{k,t}\}$, rather than the sample alone.
 Let $\bar{\mu}_{k,t}$ denote the current posterior mean,
 $
 \bar{\mu}_{k,t} \triangleq \frac{\alpha_k}{\alpha_k+\beta_k},
@@ -216,7 +221,7 @@ We then define the \emph{volatility proxy} for each arm as
 \nu_{k,t} \triangleq \sqrt{\max\{v_k,0\}}.
 \label{eq:vol_proxy_main}
 \end{equation}
-Intuitively, if recent prediction errors are consistently large or fluctuate strongly, then $\nu_{k,t}$ increases, suggesting that the arm's behavior is changing (or at least poorly captured by its current posterior).
+This proxy measures variation around the EWMA surprise mean, not the magnitude of that mean. Fluctuating surprises can increase $\nu_{k,t}$, whereas a constant large surprise eventually has vanishing centered variation. It is an indirect signal of change, not a calibrated estimate of changes in the true reward mean.
 
 \subsection{Mapping volatility to a discount candidate}
 VG-dTS converts $\nu_{k,t}$ into a discount candidate $\gamma^{\mathrm{vol}}_{k,t}\in[\gamma_{\min},\gamma_{\max}]$ with the monotonic principle such that higher volatility $\nu_{k,t}$ will lead to smaller discount factor $\gamma^{\mathrm{vol}}_{k,t}$, so we obtain faster forgetting.
@@ -224,11 +229,11 @@ VG-dTS converts $\nu_{k,t}$ into a discount candidate $\gamma^{\mathrm{vol}}_{k,
 We implement this map in two simple, interpretable families (Appendix~\ref{app:vgdts}):
 (i) an inverse-linear map between user-specified low/high volatility levels, and
 (ii) a logistic (smooth threshold) map controlled by a midpoint and slope.
-These are design choices rather than identities: they enforce boundedness, monotonicity, and numerical stability, while offering clear tuning knobs.
+These are design choices rather than identities: they enforce boundedness, monotonicity, and numerical stability, while offering clear tuning knobs. All reported experiments use the inverse-linear map; the logistic map is implemented but is not evaluated here.
 
 \subsection{Reliability gate via effective sample size}
 Early in learning, volatility estimates are unreliable because the posterior itself is uncertain and each arm may have very few observations.
-To prevent overreaction, VG-dTS mixes the volatility-based discount with a conservative default $\gamma_{\mathrm{def}}$ using a data-dependent gate:
+To temper adaptation when effective evidence is small, VG-dTS can mix the volatility-based discount with a default $\gamma_{\mathrm{def}}$ using a data-dependent gate. The implementation first clips the supplied default to $[\gamma_{\min},\gamma_{\max}]$; throughout the update equations, $\gamma_{\mathrm{def}}$ denotes this clipped value:
 \begin{equation}
 n^{\mathrm{eff}}_{k,t} \triangleq \max\{\alpha_k+\beta_k-2,\,0\},\qquad
 w_{k,t}\triangleq
@@ -239,7 +244,7 @@ w_{k,t}\triangleq
 \label{eq:gate_main}
 \end{equation}
 where $n^{\mathrm{eff}}_{k,t}$ is the \emph{effective sample size} (pseudo-counts of evidence) and $n_0\ge 0$ is a gate scale.
-When $n^{\mathrm{eff}}_{k,t}\ll n_0$, we have $w_{k,t}\approx 0$ and the algorithm relies on $\gamma_{\mathrm{def}}$; when $n^{\mathrm{eff}}_{k,t}\gg n_0$, $w_{k,t}\approx 1$ and the algorithm trusts volatility.
+For $n_0>0$, when $n^{\mathrm{eff}}_{k,t}\ll n_0$, we have $w_{k,t}\approx 0$ and the algorithm relies on $\gamma_{\mathrm{def}}$; when $n^{\mathrm{eff}}_{k,t}\gg n_0$, $w_{k,t}\approx 1$. For $n_0=0$, this is a binary gate: it equals one whenever effective evidence is positive and does not provide a gradual reliability transition.
 The final discount is the convex combination
 \begin{equation}
 \gamma_{k,t} \triangleq (1-w_{k,t})\gamma_{\mathrm{def}} + w_{k,t}\gamma^{\mathrm{vol}}_{k,t},
@@ -255,7 +260,7 @@ After computing $\gamma_{k,t}$ for all arms, VG-dTS applies the prior-preserving
 \beta_{A_t}\leftarrow \beta_{A_t}+1-R_t.
 \label{eq:conjugate_update_main}
 \end{equation}
-Similar to \cite{raj2017taming}, we optionally use an optimistic score $\theta_{k,t}=\max\{\widetilde{\mu}_{k,t},\bar{\mu}_{k,t}\}$, which empirically reduced under-exploration in fast-changing regimes.
+Similar to \cite{raj2017taming}, we use the optimistic score $\theta_{k,t}=\max\{\widetilde{\mu}_{k,t},\bar{\mu}_{k,t}\}$ in every reported VG-dTS configuration, including the negative control. Standard scoring is supported by the code but is not part of the reported comparison.
 \paragraph{What optimism means here}
 In standard Thompson scoring, the action score is the posterior sample $\widetilde{\mu}_{k,t}$.
 Under optimistic scoring, we instead use
@@ -268,8 +273,7 @@ Under optimistic scoring, we instead use
 \]
 where $\bar{\mu}_{k,t}$ is the posterior mean.
 This is a lightweight optimism-in-the-face-of-uncertainty mechanism: it clips overly pessimistic draws upward to the arm's current mean estimate, so arms are less likely to be discarded due to one unlucky sample.
-In non-stationary settings, that can improve re-discovery of recently improved arms.
-The tradeoff is that clipping low draws makes the policy slightly greedier, so we treat optimism as optional rather than mandatory.
+This changes the action-selection distribution. The reported experiments do not include an optimism ablation, so they do not isolate its effect from that of adaptive discounting.
 
 \subsection{Subroutines and intuition}
 Algorithm~\ref{alg:vgdts} calls two subroutines:
@@ -287,8 +291,8 @@ The inverse-linear map is a simple piecewise-linear schedule; the logistic map p
 \subsection{Basic properties}
 VG-dTS satisfies several immediate properties useful for interpretation and implementation.
 \begin{itemize}
-\item \textbf{Boundedness.} If $\gamma^{\mathrm{vol}}_{k,t}\in[\gamma_{\min},\gamma_{\max}]$ and $w_{k,t}\in[0,1]$, then $\gamma_{k,t}\in[\gamma_{\min},\gamma_{\max}]$.
-\item \textbf{Monotonicity in volatility.} Both supported maps are monotone decreasing in $\nu$, so higher estimated volatility yields smaller discounts and faster forgetting.
+\item \textbf{Boundedness.} With both $\gamma^{\mathrm{vol}}_{k,t}$ and the clipped $\gamma_{\mathrm{def}}$ in $[\gamma_{\min},\gamma_{\max}]$, and $w_{k,t}\in[0,1]$, their convex combination remains in this interval.
+\item \textbf{Monotonicity in volatility.} Both supported maps are nonincreasing in $\nu$. At a fixed gate weight, increasing the proxy cannot increase the final discount.
 \item \textbf{Gate behavior.} For $n_0>0$, $w_{k,t}\to 0$ as $n^{\mathrm{eff}}_{k,t}\to 0$ and $w_{k,t}\to 1$ as $n^{\mathrm{eff}}_{k,t}\to\infty$; for $n_0=0$, the implementation uses $w_{k,t}=\mathbb{I}\{n^{\mathrm{eff}}_{k,t}>0\}$.
 \item \textbf{Per-round cost.} The method is $O(K)$ per round and stores $O(K)$ state.
 \end{itemize}
@@ -329,16 +333,17 @@ VG-dTS satisfies several immediate properties useful for interpretation and impl
 % which reduced under-exploration in our fast-changing regimes.
 
 \begin{algorithm}[t]
-\caption{\textsc{VG-dTS}: Volatility-Gated Discounted Thompson Sampling}
+\caption{\textsc{VG-dTS}: Variance-Gated Discounted Thompson Sampling (reported optimistic configuration)}
 \label{alg:vgdts}
 \begin{algorithmic}[1]
-\STATE \textbf{Input:} $K$, $T$, prior $(\alpha_0,\beta_0)$; bounds $(\gamma_{\min},\gamma_{\max})$; default $\gamma_{\mathrm{def}}$;
+\STATE \textbf{Input:} $K$, $T$, prior $(\alpha_0,\beta_0)=(1,1)$; bounds $(\gamma_{\min},\gamma_{\max})$; default $\gamma_{\mathrm{def}}$;
 EWMA $\lambda$; surprise params $(\epsilon,c,b)$; gate $n_0$; mapping params for \texttt{MapToDiscount}
+\STATE $\gamma_{\mathrm{def}}\leftarrow\mathrm{clip}(\gamma_{\mathrm{def}},\gamma_{\min},\gamma_{\max})$
 \STATE Initialize $(\alpha_k,\beta_k)\leftarrow(\alpha_0,\beta_0)$ and $(m_k,v_k)\leftarrow(0,0)$ for all $k\in[K]$
 \FOR{$t=1,\ldots,T$}
     \FOR{$k=1,\ldots,K$}
         \STATE Sample $\widetilde{\mu}_{k,t}\sim \mathrm{Beta}(\alpha_k,\beta_k)$ and set $\bar{\mu}_{k,t}\leftarrow \frac{\alpha_k}{\alpha_k+\beta_k}$
-        \STATE Score $\theta_{k,t}\leftarrow \max\{\widetilde{\mu}_{k,t},\bar{\mu}_{k,t}\}$ \hfill (optional optimistic variant)
+        \STATE Score $\theta_{k,t}\leftarrow \max\{\widetilde{\mu}_{k,t},\bar{\mu}_{k,t}\}$ \hfill (used in all reported runs)
     \ENDFOR
     \STATE Play $A_t\leftarrow\arg\max_k \theta_{k,t}$ and observe $R_t\in\{0,1\}$; set $x_t\leftarrow R_t$ \hfill (Bernoulli case)
     \STATE $s_t\leftarrow \texttt{StdSurprise}(x_t,\bar{\mu}_{A_t,t};\epsilon,c,b)$
@@ -381,11 +386,11 @@ For a single run, we define normalized regret at round $t$ as
 \label{eq:nr_def}
 \end{equation}
 where $\mu_s^\star=\max_k\mu_{k,s}$ is the dynamic-oracle mean and $R_s\in\{0,1\}$ is the realized reward.
-This is a realized estimator of dynamic pseudo-regret; taking expectation over reward noise yields
+This realized statistic may be negative on an individual rollout and is not clipped. Conditional on the fixed environment means, its expectation over both policy randomization and reward noise satisfies
 \[
 \mathbb{E}[\mathrm{NR}_t]
 =
-\frac{1}{t}\sum_{s=1}^{t}\bigl(\mu_s^\star-\mu_{A_s,s}\bigr).
+\frac{1}{t}\sum_{s=1}^{t}\bigl(\mu_s^\star-\mathbb{E}[\mu_{A_s,s}]\bigr).
 \]
 The primary scalar metric is \emph{final normalized regret} $\mathrm{NR}_T$.
 Reported values are Monte Carlo averages over repeated rollouts,
@@ -396,8 +401,13 @@ Reported values are Monte Carlo averages over repeated rollouts,
 \label{eq:nr_mc}
 \end{equation}
 
-Our evaluation pipeline uses fixed environment realizations per environment and independent pseudo-random rollouts per policy.
-For tuned experiments, each policy candidate is selected on a tuning split and then re-evaluated on a disjoint evaluation split (different seed stream) to reduce selection bias.
+Each environment has one fixed mean trajectory, shared by all methods. Rollouts repeat reward and policy randomness, not the environment realization. Within a policy--environment pair, tuning and evaluation use separate pseudo-random seed streams. The legacy arithmetic seed schedule reuses some streams across different pairs, so the cells of the benchmark are not globally independent. Suite averages weight the eight environments equally.
+
+\paragraph{Reproduction settings and provenance.}
+The reconstruction uses base seed 0, 70 rollouts per tuning candidate, and $N=1000$ evaluation rollouts at each selected or fixed setting. The original summaries retain parameters and final regrets but not the original invocation or run metadata; these run settings were reconstructed, not recovered from an original log. Evaluation replay at the archived settings reproduced all 119 reported final regrets exactly (two $8\times7$ suites and one seven-method negative control). This validates the evaluation replay, not a fresh hyperparameter search: the full 70-rollout tuning sweep has not been rerun. NumPy 1.26.4 is required to reproduce the archived random-breakpoint realization. The repository's reproduction guide records the seed schedule, dependency versions, commands, and validation scope.
+
+\paragraph{Implemented Dynamic TS baseline.}
+Dynamic TS samples from each arm's Beta posterior and updates only the played arm. Before adding the current reward, if that arm's posterior mass $\alpha_{A_t}+\beta_{A_t}$ exceeds $C$, both parameters are multiplied by $C/(C+1)$. This is thresholded discounting of the played arm, including its prior mass; it is not an explicit changepoint test or a hard reset of posteriors.
 
 \subsection{Environment Suite}
 Our suite spans smooth drift, abrupt shifts, and mixed/randomized dynamics:
@@ -415,7 +425,7 @@ Environment & Dynamics specification used in this paper \\
 \midrule
 \texttt{slow} & Sinusoidal means $\mu_{k,t}=0.5+0.5\sin(2\pi t/1000+\phi_k)$ with phases $\phi_k\in\{0,\pi/2,\pi,3\pi/2\}$. \\
 \texttt{fast} & Same sinusoidal construction as \texttt{slow}, but with period $100$ instead of $1000$. \\
-\texttt{abrupt} & Step-cycle of length $250$ with jumps at rounds $[50,100,150,200]$ to levels $[0.10,0.37,0.63,0.90]$, then reset. \\
+\texttt{abrupt} & Repeating 250-round cycle. All arms start at zero; arm $k$ jumps to level $[0.10,0.37,0.63,0.90]_k$ at zero-based cycle offset $[50,100,150,200]_k$ and stays there until all arms reset to zero. \\
 \texttt{mixed} & Arm 1 stationary at $0.65$, arm 2 linear drift ($0.20\rightarrow0.85$), arm 3 bursty ($p_{\text{burst}}=0.05$), arm 4 random two-level switching. \\
 \texttt{random\_breakpoints} & Per-arm piecewise-constant means with random breakpoints (4--16), minimum segment length $33$, and minimum jump $0.10$. \\
 \texttt{random\_drift} & Randomized sinusoid per arm with amplitude random walk in $[0.05,0.30]$ plus slow drift. \\
@@ -491,21 +501,21 @@ The oracle curves in Figure~\ref{fig:env_oracle_gallery} define the reference po
 \subsection{Tuned Performance Protocol}
 By \emph{tuned performance}, we mean that each algorithm is tuned separately for each environment using the same target metric: final normalized regret. For every policy-environment pair, we select the hyperparameters that minimize \texttt{tuning\_final\_normalized\_regret}, then report \texttt{eval\_final\_normalized\_regret} under the selected setting.
 
-The tuned hyperparameters are the primary adaptation controls for each method: none for TS; discount factor for dTS/dOTS (faster adaptation at lower values); $(\lambda, C)$ for Dynamic TS, where $C$ is the reset/change threshold and the effective discount is $\lambda=\frac{C}{C+1}$ (equivalently, $C=\frac{\lambda}{1-\lambda}$ in our tuned sweep); $(\gamma,\Delta)$ for REXP3, where $\gamma$ is exploration rate and $\Delta$ is restart window length; window length $\tau$ for Beta-SWTS; and VG-dTS controls $(\gamma_{\min},\gamma_{\max},\gamma_{\mathrm{def}},n_0,\lambda_{\mathrm{vol}})$ plus surprise-mapping settings, where $n_0$ is gate strength and $s_t\!\rightarrow\!\nu_{k,t}\!\rightarrow\!\gamma^{\mathrm{vol}}_{k,t}$ is the surprise-to-discount path used in Algorithm~\ref{alg:vgdts}.
+The tuned hyperparameters are the primary adaptation controls for each method: none for TS; discount factor for dTS/dOTS (faster adaptation at lower values); $(\lambda, C)$ for Dynamic TS, where $C$ is the played arm's posterior-mass threshold and the effective discount is $\lambda=\frac{C}{C+1}$ (equivalently, $C=\frac{\lambda}{1-\lambda}$ in our tuned sweep); $(\gamma,\Delta)$ for REXP3, where $\gamma$ is exploration rate and $\Delta$ is restart window length; window length $\tau$ for Beta-SWTS; and VG-dTS controls $(\gamma_{\min},\gamma_{\mathrm{def}},n_0,\lambda_{\mathrm{vol}})$ plus surprise-mapping settings, where $n_0$ is gate strength and $s_t\!\rightarrow\!\nu_{k,t}\!\rightarrow\!\gamma^{\mathrm{vol}}_{k,t}$ is the surprise-to-discount path used in Algorithm~\ref{alg:vgdts}.
 
-To keep tuning fairness explicit, all methods are tuned within preset family-specific grids of comparable breadth.
+The family-specific search grids have unequal sizes: VG-dTS has 64 candidates; dTS, dOTS, and Dynamic TS have 7 each; TS has 1; REXP3 has 15; and Beta-SWTS has 5. Thus equal rollouts per candidate do not imply equal tuning budgets, and the tuned comparison does not isolate algorithmic quality from search effort.
 For horizon $T=5000$, the baseline grids are:
 dTS/dOTS and Dynamic TS: $\lambda\in\{0.30,0.45,0.60,0.75,0.85,0.92,0.97\}$, with Dynamic TS mapped to $C=\lambda/(1-\lambda)$.
 REXP3: $\gamma\in\{0.05,0.10,0.20,0.30,0.40\}$ and $\Delta\in\{125,250,500\}$.
 Beta-SWTS: $\tau\in\{50,100,200,500,1000\}$.
-VG-dTS is tuned on a modest grid over the main adaptation controls:
+The VG-dTS grid varies six controls:
 $\gamma_{\mathrm{def}}\in\{0.45,0.85\}$,
 $\gamma_{\min}\in\{0.12,0.70\}$,
 $\lambda_{\mathrm{vol}}\in\{0.88,0.97\}$,
 $n_0\in\{0,25\}$,
 $\nu_{\mathrm{high}}\in\{2.6,3.5\}$, and
 one-sided surprise flag $b\in\{0,1\}$, where $b=1$ uses downside-only surprise $e_t=\max\{\bar{\mu}_{A_t,t}-x_t,0\}$ and $b=0$ uses two-sided surprise $e_t=|x_t-\bar{\mu}_{A_t,t}|$.
-This protocol is important because non-stationary performance is highly hyperparameter-sensitive. Tuned results estimate each method's best-case capability on a given environment, while our fixed-parameter analysis later tests cross-environment robustness.
+All VG-dTS candidates use optimistic scoring, the inverse-linear map, $\gamma_{\max}=0.995$, $\nu_{\mathrm{low}}=0$, $c=8$, $\epsilon=10^{-12}$, $(m_k,v_k)=(0,0)$ initially, and a $\mathrm{Beta}(1,1)$ prior. The same prior is used for the other Beta-based policies. Tuned results evaluate the setting selected from each specified grid on that environment realization; they are not estimates of an unconstrained best-case capability. The fixed protocol instead evaluates one archived setting per method across the suite.
 
 \subsection{Results on Canonical Benchmarks}
 Figure~\ref{fig:original_paper_envs_tuned} summarizes tuned results on \texttt{slow}, \texttt{fast}, and \texttt{abrupt}.
@@ -513,8 +523,8 @@ VG-dTS attains strong performance in all three regimes:
 0.056 (slow), 0.211 (fast), and 0.102 (abrupt) final normalized regret.
 Relative to dTS, this corresponds to improvements of 14.3\%, 12.0\%, and 17.0\%, respectively.
 In abrupt dynamics, VG-dTS is best overall among all tested methods.
-In fast periodic drift, VG-dTS and dOTS are effectively tied, while both clearly outperform TS and REXP3.
-This is consistent with the algorithmic design: in smoother regimes, tuned fixed-discount methods can approach the best constant forgetting rate, while in abrupt regimes VG-dTS benefits from online, arm-wise discount adaptation.
+In fast periodic drift, VG-dTS and dOTS have similar point estimates, while both have lower reported regret than TS and REXP3. No statistical-equivalence claim is made.
+These observations are consistent with a benefit from adaptive forgetting in abrupt dynamics, but this comparison does not isolate that mechanism from optimistic scoring or other configuration choices.
 
 \begin{figure}[!htbp]
 \centering
@@ -525,14 +535,14 @@ This is consistent with the algorithmic design: in smoother regimes, tuned fixed
 
 \FloatBarrier
 
-\subsection{Eight-Environment Generalization}
+\subsection{Results Across Eight Environments}
 Figure~\ref{fig:optimized_heatmap} reports tuned performance across all eight environments.
 VG-dTS achieves the best \emph{average} regret over the suite (0.1047), improving over dTS (0.1200), dOTS (0.1067), Dynamic TS (0.1120), and Beta-SWTS (0.1219).
 The heatmap also clarifies regime specialization:
 Dynamic TS is strongest in highly random switching/drift settings (\texttt{random\_breakpoints}, \texttt{random\_drift}, \texttt{global\_switching}, \texttt{per\_arm\_switching}),
 while VG-dTS is strongest on \texttt{abrupt} and near-best on \texttt{slow}, \texttt{fast}, and \texttt{mixed}.
-This behavior is consistent with VG-dTS targeting \emph{volatility adaptation} rather than explicit changepoint resets.
-Exact per-environment tuned parameter choices are summarized in Table~\ref{tab:tuned_params_matrix}.
+These are descriptive rankings on the evaluated realizations; the experiment does not identify the mechanism responsible for each difference.
+Table~\ref{tab:tuned_params_matrix} summarizes the selected controls. All eight selected VG-dTS settings use $\nu_{\mathrm{high}}=3.5$; only \texttt{fast} selects $n_0=25$, while the other seven select $n_0=0$. Supplied defaults of $0.45$ in \texttt{mixed} and \texttt{random\_drift} are clipped to $\gamma_{\min}=0.70$ before mixing. Full-precision parameter dictionaries are archived in the repository.
 
 \begin{figure}[H]
 \centering
@@ -562,7 +572,7 @@ Environment & VG-dTS & dTS & dOTS & TS & REXP3 & Dynamic TS & Beta-SWTS \\
 \bottomrule
 \end{tabular}
 }
-\caption{Exact tuned parameter values used in the tuned-performance protocol (env rows, algorithm columns). Notation: VG-dTS cells use $(\lambda_{\mathrm{vol}},\gamma_{\min},\gamma_{\mathrm{def}},n_0,b)$ with fixed $\gamma_{\max}=0.995$, where $b\in\{0,1\}$ selects surprise mode ($b=1$: downside-only, $b=0$: two-sided); dTS/dOTS cells show $\gamma$; REXP3 cells show $(\gamma,\Delta)$; Dynamic TS cells show $(\lambda,C)$; Beta-SWTS cells show $\tau$; TS has no tuned hyperparameter.}
+\caption{Selected tuned controls (env rows, algorithm columns); Dynamic TS thresholds are rounded. Common VG-dTS constants are specified in the text, including $\nu_{\mathrm{high}}=3.5$ and optimistic scoring. The $\gamma_{\mathrm{def}}$ tuple entry reports the supplied value before clipping. Notation: VG-dTS cells use $(\lambda_{\mathrm{vol}},\gamma_{\min},\gamma_{\mathrm{def}},n_0,b)$ with fixed $\gamma_{\max}=0.995$, where $b\in\{0,1\}$ selects surprise mode ($b=1$: downside-only, $b=0$: two-sided); dTS/dOTS cells show $\gamma$; REXP3 cells show $(\gamma,\Delta)$; Dynamic TS cells show $(\lambda,C)$; Beta-SWTS cells show $\tau$; TS has no tuned hyperparameter.}
 \label{tab:tuned_params_matrix}
 \end{table}
 
@@ -571,24 +581,24 @@ Environment & VG-dTS & dTS & dOTS & TS & REXP3 & Dynamic TS & Beta-SWTS \\
 \subsection{Robustness and Noise Stress Test}
 Figure~\ref{fig:fixed_heatmap} removes per-environment retuning by using fixed parameters across all environments.
 Under this stricter protocol, VG-dTS has the best average regret (0.1351), a 33.5\% reduction versus dTS and 24.2\% versus dOTS, and ties for most per-environment wins.
-This indicates that volatility gating substantially reduces sensitivity to manual discount selection.
-Exact fixed parameters used in this protocol are listed in Table~\ref{tab:fixed_params_matrix}.
+This establishes a lower average for the particular fixed configurations evaluated. It does not establish insensitivity to parameter choice or a causal benefit from the reliability gate.
+The fixed controls are listed in Table~\ref{tab:fixed_params_matrix}; full-precision settings are archived in the repository.
 
-The fixed choices in Figure~\ref{fig:fixed_heatmap} and Table~\ref{tab:fixed_params_matrix} are intentionally conservative and were selected \emph{once} for cross-environment transfer rather than per-environment optimization.
-For VG-dTS, we use the benchmark default tuple $(\lambda_{\mathrm{vol}},\gamma_{\min},\gamma_{\mathrm{def}},n_0,b)=(0.88,0.12,0.45,0,0)$ with $\gamma_{\max}=0.995$, which gives moderate volatility responsiveness with bounded forgetting.
+The archived settings in Figure~\ref{fig:fixed_heatmap} and Table~\ref{tab:fixed_params_matrix} are held constant across environments. The archive does not document an independent procedure for selecting these defaults, so this protocol should not be interpreted as held-out environment selection.
+For VG-dTS, we use the benchmark default tuple $(\lambda_{\mathrm{vol}},\gamma_{\min},\gamma_{\mathrm{def}},n_0,b)=(0.88,0.12,0.45,0,0)$ with $\gamma_{\max}=0.995$ and $\nu_{\mathrm{high}}=2.6$. The other common VG-dTS constants match those in the tuned protocol. With $n_0=0$, the gate is fully open whenever effective evidence is positive; these fixed results therefore do not demonstrate a benefit from gradual reliability gating.
 For dTS/dOTS, $\gamma=0.75$ is a mid-range memory setting from the tuned grid.
-For REXP3, $(\gamma,\Delta)=(0.1136,250)$ uses a stable exploration rate and restart period aligned with medium-timescale shifts.
-For Dynamic TS, $C=250$ (equivalently $\lambda=\frac{C}{C+1}\approx 0.996$) emphasizes stability over aggressive resets.
-For Beta-SWTS, $\tau=200$ corresponds to a short-to-medium memory window ($4\%$ of horizon at $T=5000$), balancing recency and variance.
+For REXP3, $(\gamma,\Delta)=(0.1136,250)$ sets the exploration mixture weight to $0.1136$ and restarts the weights every 250 rounds.
+For Dynamic TS, $C=250$ (equivalently $\lambda=\frac{C}{C+1}\approx 0.996$) delays discounting until the played arm exceeds the posterior-mass threshold and then uses mild discounting.
+For Beta-SWTS, $\tau=200$ retains observations from the most recent 200 rounds ($4\%$ of the horizon at $T=5000$).
 
-Figure~\ref{fig:pure_random_signal} shows a negative-control setting (\texttt{pure\_random\_signal}) where all methods are nearly indistinguishable:
+Figure~\ref{fig:pure_random_signal} shows a tuned negative control (\texttt{pure\_random\_signal}) whose arm means are independently drawn from $\mathrm{Uniform}(0.05,0.95)$ at every round. One realization is held fixed across rollouts, with the same tuning grids and rollout budgets as above. The methods have close reported point estimates:
 the spread between best and worst final normalized regret is only $6.13\times 10^{-4}$.
-This confirms that when the reward stream is effectively uninformative, adaptive discounting has little room to improve outcomes.
+This is consistent with past rewards providing no predictive information about the next independent draw of arm means. It does not establish statistical equivalence between methods.
 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\linewidth]{rigorous_pure_random_signal_tuned.png}
-\caption{Pure-random-signal stress test: all algorithms converge to nearly identical regret, as expected for an information-poor environment.}
+\caption{Tuned pure-random-signal control: reported final regrets differ by at most $6.13\times10^{-4}$ on this realization. No confidence intervals or equivalence test are reported.}
 \label{fig:pure_random_signal}
 \end{figure}
 
@@ -623,23 +633,23 @@ Environment & VG-dTS & dTS & dOTS & TS & REXP3 & Dynamic TS & Beta-SWTS \\
 \bottomrule
 \end{tabular}
 }
-\caption{Exact fixed parameters used in the fixed-parameter protocol (env rows, algorithm columns). Notation: VG-dTS cells use $(\lambda_{\mathrm{vol}},\gamma_{\min},\gamma_{\mathrm{def}},n_0,b)$ with fixed $\gamma_{\max}=0.995$, where $b\in\{0,1\}$ selects surprise mode ($b=1$: downside-only, $b=0$: two-sided); dTS/dOTS cells show $\gamma$; REXP3 cells show $(\gamma,\Delta)$; Dynamic TS cells show $(\lambda,C)$ with $\lambda=C/(C+1)$; Beta-SWTS cells show $\tau$; TS has no tuned hyperparameter.}
+\caption{Fixed controls used across environments (env rows, algorithm columns); Dynamic TS discount values are rounded. VG-dTS uses the common constants stated in the text, with $\nu_{\mathrm{high}}=2.6$ and optimistic scoring. Notation: VG-dTS cells use $(\lambda_{\mathrm{vol}},\gamma_{\min},\gamma_{\mathrm{def}},n_0,b)$ with fixed $\gamma_{\max}=0.995$, where $b\in\{0,1\}$ selects surprise mode ($b=1$: downside-only, $b=0$: two-sided); dTS/dOTS cells show $\gamma$; REXP3 cells show $(\gamma,\Delta)$; Dynamic TS cells show $(\lambda,C)$ with $\lambda=C/(C+1)$; Beta-SWTS cells show $\tau$; TS has no tuned hyperparameter.}
 \label{tab:fixed_params_matrix}
 \end{table}
 
 \subsection{Discussion: When VG-dTS Helps, and When It Does Not}
-VG-dTS is most effective when arm quality changes are real but uneven across time and arms, particularly in abrupt or mixed regimes where fixed forgetting is either too rigid or too noisy.
-The volatility gate is central here because it stabilizes early learning and only activates strong adaptation once posterior evidence is reliable.
+VG-dTS has the lowest tuned regret on \texttt{abrupt}. Under the fixed protocol it leads on \texttt{fast}, \texttt{abrupt}, \texttt{global\_switching}, and \texttt{per\_arm\_switching}; Beta-SWTS leads on the other four environments. The fixed settings and seven of eight tuned settings use $n_0=0$, so their gains cannot be attributed to a gradual reliability gate. No reported ablation isolates the effects of the gate, optimistic scoring, or the volatility map.
 
 The main shortcoming is that VG-dTS infers non-stationarity indirectly from reward surprise.
-In environments dominated by random resets or nearly structureless noise, this proxy can be too weak or ambiguous, and methods with explicit reset behavior (e.g., Dynamic TS) may perform better.
+In the tuned stochastic switching and drift settings, the implemented threshold-discounting Dynamic TS baseline has lower regret. The present results do not establish why, and this baseline does not perform explicit change detection or posterior resets.
 A second limitation is delayed volatility estimation for rarely selected arms under bandit feedback, which can slow adaptation after long inactivity.
-These observations open the path for future work on cross-arm volatility sharing and hybrid volatility-plus-changepoint mechanisms.
+\paragraph{Limits of the evidence.}
+All comparisons condition on one mean trajectory per environment and report point estimates without confidence intervals or significance tests. Repeating 1000 reward/policy rollouts does not measure variation across independent environment draws. Unequal tuning grids, undocumented default-selection provenance, and reused seed streams across some cells further limit generalization and causal interpretation. Controlled component ablations, independent environment realizations, and uncertainty estimates are needed to test stronger robustness claims. The repository provides the original numerical summaries and reproducible evaluation code at \url{https://github.com/MG-05/VG-dTS}.
 
 \section{Conclusion}
 We introduced VG-dTS, a non-stationary Thompson-sampling variant that combines prior-preserving discounting with arm-wise volatility gating. The method addresses a central weakness of fixed-discount Bayesian bandits: the same forgetting rate is rarely optimal across both stable and rapidly changing periods.
 
-Across eight non-stationary Bernoulli environments, VG-dTS is competitive in tuned settings and achieves the best average performance in our fixed-parameter robustness protocol, indicating lower sensitivity to manual discount selection. The strongest gains appear in abrupt and mixed regimes, where adaptive forgetting is most beneficial.
+Across the eight evaluated non-stationary Bernoulli environment realizations, VG-dTS achieves the lowest average normalized regret under both the tuned and fixed-parameter protocols. These results support further investigation of adaptive forgetting, but do not isolate its individual components or establish robustness across independent environment draws or alternative parameter-search budgets.
 
 Systematically, VG-dTS still relies on reward-surprise as an indirect change signal and can react slowly on rarely played arms. Promising next steps include cross-arm volatility sharing and hybrid volatility-plus-changepoint mechanisms.
 \bibliographystyle{apalike}

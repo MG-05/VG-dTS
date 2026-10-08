@@ -152,7 +152,7 @@ which is then fed into the EWMA volatility update \eqref{eq:apx_ewma}. Algorithm
 \end{algorithm}
 
 \subsection{EWMA volatility proxy: tracking recent instability}
-A single surprise value is noisy. VG-dTS therefore maintains an online estimate of how large/variable surprises have been recently, using EWMA statistics.
+A single surprise value is noisy. VG-dTS maintains an EWMA surprise mean and a centered second-moment statistic; the discount map uses the latter.
 
 For a sequence $\{y_t\}$, an EWMA mean $m_t$ satisfies
 \[
@@ -173,7 +173,7 @@ We then define the \emph{volatility proxy} for each arm as
 \nu_{k,t}\triangleq \sqrt{\max\{v_k,0\}}.
 \label{eq:apx_volproxy}
 \end{equation}
-Intuitively, $\nu_{k,t}$ increases when recent surprises are persistently large or fluctuate strongly, which is consistent with drifting means or regime changes.
+The proxy $\nu_{k,t}$ reflects variability around the updated surprise mean. A constant large surprise does not sustain large centered variation once the EWMA mean has adapted; the proxy is not a direct measure of prediction-error magnitude or true environmental volatility.
 
 \subsection{From volatility to discount: two monotone mappings}
 VG-dTS converts the nonnegative volatility proxy $\nu$ into a bounded discount candidate
@@ -205,7 +205,7 @@ u \triangleq \mathrm{clip}\!\left(s_{\log}(\nu-\nu_{\mathrm{mid}}),\, -60,\, 60\
 \gamma^{\mathrm{vol}}(\nu)\triangleq \gamma_{\min}+\frac{\gamma_{\max}-\gamma_{\min}}{1+e^{u}}.
 \label{eq:apx_map_logistic}
 \end{equation}
-The clip on $u$ is purely for numerical stability of $\exp(u)$.
+The clip on $u$ is purely for numerical stability of $\exp(u)$. This map is supported by the implementation, but all reported experiments use the inverse-linear map.
 
 In the algorithm, once $\nu_{k,t}$ is available (Eq.~\eqref{eq:apx_volproxy}), VG-dTS converts it into a discount candidate by calling
 \[
@@ -252,20 +252,20 @@ w_{k,t}\triangleq
 where $n_0\ge 0$ controls how quickly the gate opens:
 small $n_0$ trusts volatility earlier; large $n_0$ delays volatility-driven adaptation.
 
-The final discount is a convex combination of a conservative default $\gamma_{\mathrm{def}}$ and the volatility-based candidate:
+The implementation first replaces the supplied default by $\gamma_{\mathrm{def}}\leftarrow\mathrm{clip}(\gamma_{\mathrm{def}},\gamma_{\min},\gamma_{\max})$. It then mixes this bounded default with the volatility-based candidate:
 \begin{equation}
 \gamma_{k,t}\triangleq \mathrm{clip}\!\left((1-w_{k,t})\gamma_{\mathrm{def}}+w_{k,t}\gamma^{\mathrm{vol}}_{k,t},\ \gamma_{\min},\ \gamma_{\max}\right).
 \label{eq:apx_gamma_mix}
 \end{equation}
-This ensures VG-dTS behaves like a stable discounted TS variant early on, and gradually transitions to volatility-driven discounting once there is sufficient evidence.
+For $n_0>0$, this permits a gradual blend as effective evidence grows. For $n_0=0$, the gate is binary and opens fully whenever effective evidence is positive. The fixed protocol and seven of eight tuned settings use this binary case; the reported gains do not establish a benefit from gradual gating.
 
 \subsection{Putting everything together}
-In conclusion, at each round $t$, VG-dTS first performs Thompson-style action selection by sampling $\widetilde{\mu}_{k,t}\sim \mathrm{Beta}(\alpha_k,\beta_k)$ for each arm and choosing an action $A_t$ with the largest score (optionally using the optimistic score $\theta_{k,t}=\max\{\widetilde{\mu}_{k,t},\bar{\mu}_{k,t}\}$).
+In conclusion, at each round $t$, VG-dTS first performs Thompson-style action selection by sampling $\widetilde{\mu}_{k,t}\sim \mathrm{Beta}(\alpha_k,\beta_k)$ for each arm and choosing an action $A_t$ with the largest score (using the optimistic score $\theta_{k,t}=\max\{\widetilde{\mu}_{k,t},\bar{\mu}_{k,t}\}$ in every reported experiment).
 After observing the binary reward $R_t\in\{0,1\}$, the algorithm forms a predictive probability $p_t=\bar{\mu}_{A_t,t}$ for the played arm and computes a standardized prediction error by calling
 $s_t=\texttt{StdSurprise}(x_t,p_t;\epsilon,c,b)$ as specified in Algorithm~\ref{alg:apx_stdsurprise}, where $x_t=R_t$ in the Bernoulli setting.
 This surprise value is then used to update the EWMA volatility statistics of the played arm via \eqref{eq:apx_ewma}, and the resulting per-arm volatility proxy is defined as $\nu_{k,t}=\sqrt{\max\{v_k,0\}}$.
 Given $\nu_{k,t}$, VG-dTS obtains an arm-wise discount candidate by calling $\gamma^{\mathrm{vol}}_{k,t}=\texttt{MapToDiscount}(\nu_{k,t};\gamma_{\min},\gamma_{\max},\texttt{mode},\texttt{params})$, as specified in Algorithm~\ref{alg:apx_maptodiscount}.
-To avoid overreacting when an arm has little data, the algorithm computes an effective sample size $n^{\mathrm{eff}}_{k,t}=\max\{\alpha_k+\beta_k-2,0\}$ and forms a reliability weight $w_{k,t}$ using \eqref{eq:apx_gate}, which mixes a conservative default discount $\gamma_{\mathrm{def}}$ with the volatility-based candidate $\gamma^{\mathrm{vol}}_{k,t}$ to produce $\gamma_{k,t}$ as in \eqref{eq:apx_gamma_mix}.
+The algorithm computes an effective sample size $n^{\mathrm{eff}}_{k,t}=\max\{\alpha_k+\beta_k-2,0\}$ and forms a reliability weight $w_{k,t}$ using \eqref{eq:apx_gate}, which mixes the clipped default discount $\gamma_{\mathrm{def}}$ with the volatility-based candidate $\gamma^{\mathrm{vol}}_{k,t}$ to produce $\gamma_{k,t}$ as in \eqref{eq:apx_gamma_mix}.
 The algorithm then applies the prior-preserving discount transformation \eqref{eq:apx_discount} to all arms, reflecting the possibility that any arm may drift even when unplayed, and finally incorporates the new observation for the played arm using the standard Beta--Bernoulli conjugate update \eqref{eq:apx_conjugate}.
 
 \subsection{Practical parameter intuition (brief)}
@@ -275,5 +275,5 @@ This subsection gives qualitative guidance for interpreting VG-dTS parameters.
 \item \textbf{$c$ (surprise clip):} smaller $c$ increases robustness but may under-react to genuine changepoints; larger $c$ increases sensitivity but risks overreaction to outliers.
 \item \textbf{$(\gamma_{\min},\gamma_{\max})$:} constrains forgetting rates; $\gamma_{\min}$ sets the maximum forgetting strength, $\gamma_{\max}$ sets the minimum forgetting strength.
 \item \textbf{$n_0$ (gate scale):} larger $n_0$ makes the algorithm rely longer on $\gamma_{\mathrm{def}}$; smaller $n_0$ trusts volatility earlier.
-\item \textbf{Mapping choice:} inverse-linear is easier to interpret via thresholds $(\nu_{\mathrm{low}},\nu_{\mathrm{high}})$; logistic is smoother and often easier to tune when there is a soft transition between stable/unstable regimes.
+\item \textbf{Mapping choice:} inverse-linear is easier to interpret via thresholds $(\nu_{\mathrm{low}},\nu_{\mathrm{high}})$; logistic provides a smooth transition, but its tuning behavior is not evaluated in this paper.
 \end{itemize}
