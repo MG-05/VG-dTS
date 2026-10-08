@@ -1,75 +1,140 @@
-# Variance-Gated Discounted Thompson Sampling
+<h1 align="center">Variance-Gated Discounted Thompson Sampling<br>for Non-Stationary Bandits</h1>
 
-**Mayand Gulati · Kerong Wang · Wei-Chen Au** — University of California, Santa Barbara
+<p align="center">
+  <strong>Mayand Gulati &nbsp;·&nbsp; Kerong Wang &nbsp;·&nbsp; Wei-Chen Au</strong><br>
+  Department of Electrical and Computer Engineering<br>
+  University of California, Santa Barbara
+</p>
 
-[Paper](report/ECE_270_Project_Publication/main.tex) · [Reproduce the results](REPRODUCIBILITY.md) · [Reference results](results/paper/)
+<p align="center">
+  <a href="report/ECE_270_Project_Publication/main.tex">Manuscript</a>
+  &nbsp;·&nbsp;
+  <a href="REPRODUCIBILITY.md">Reproduction guide</a>
+  &nbsp;·&nbsp;
+  <a href="results/paper/">Reference results</a>
+  &nbsp;·&nbsp;
+  <a href="src/adts/policies.py">Implementation</a>
+</p>
 
-Thompson Sampling learns from history. In a changing environment, that history
-can become a liability. **VG-dTS adapts how quickly each arm forgets**, using
-variation in posterior prediction errors to adjust its discount factor online.
-Across eight non-stationary Bernoulli bandit environments, it achieves the lowest
-average normalized regret among the seven methods evaluated under both the
-paper's tuned and fixed-parameter protocols.
+---
 
-## The algorithm
+## Abstract
 
-VG-dTS maintains a Beta posterior for each arm and repeats three steps:
+Non-stationary bandits require a learner to retain useful evidence while
+forgetting observations that no longer reflect the environment. A fixed discount
+factor imposes one memory timescale on every arm. **Variance-Gated Discounted
+Thompson Sampling (VG-dTS)** instead adapts each arm's forgetting rate using an
+online estimate of variability in posterior prediction errors. Across eight
+synthetic environments, VG-dTS achieves the lowest average normalized regret
+among seven evaluated methods under both tuned and fixed-parameter protocols.
+The gains are strongest in abrupt dynamics; performance remains dependent on
+the environment and parameter choices.
 
-1. **Select and observe.** Sample from each posterior, choose an arm, and observe
-   its reward. The reported experiments use optimistic scores: the larger of
-   each sample and its posterior mean.
-2. **Estimate volatility.** Standardize the played arm's prediction error and
-   update an exponentially weighted estimate of its variability. Higher
-   estimated volatility maps to a smaller discount factor.
-3. **Gate, forget, and update.** Blend that discount with a default using
-   effective sample size, discount every arm's evidence toward the prior, then
-   add the observed reward to the played arm's posterior.
+## 1. Method
 
-The prior-preserving forgetting step is
+VG-dTS maintains a Beta posterior for each arm and couples Thompson-style action
+selection with adaptive, prior-preserving forgetting:
+
+1. **Select.** Draw a sample from each posterior and play the arm with the highest
+   score. The reported experiments use optimistic scores: the larger of the
+   sample and its posterior mean.
+2. **Measure surprise.** Standardize the played arm's prediction error and update
+   its exponentially weighted mean and variance. Greater estimated variability
+   maps to a smaller discount factor.
+3. **Adapt memory.** Mix the volatility-based discount with a default using an
+   effective-sample-size gate. Discount every arm's evidence, then incorporate
+   the observed reward into the played arm's posterior.
 
 $$
-\alpha_k \leftarrow 1 + \gamma_{k,t}(\alpha_k - 1),
+\gamma_{k,t}=(1-w_{k,t})\gamma_{\mathrm{def}}+w_{k,t}\gamma^{\mathrm{vol}}_{k,t}
+$$
+
+$$
+\alpha_k \leftarrow 1+\gamma_{k,t}(\alpha_k-1),
 \qquad
-\beta_k \leftarrow 1 + \gamma_{k,t}(\beta_k - 1).
+\beta_k \leftarrow 1+\gamma_{k,t}(\beta_k-1).
 $$
 
-Smaller $\gamma_{k,t}$ means shorter memory. The reliability gate controls how
-strongly volatility determines that memory; with $n_0=0$, as in the fixed
-protocol, it opens fully once an arm has positive effective evidence.
+Smaller $\gamma_{k,t}$ means shorter memory. The gate can temper adaptation when
+evidence is scarce; with $n_0=0$, as in the fixed protocol, it opens fully once
+an arm has positive effective evidence.
 
-## Results
+## 2. Empirical results
 
-We compare VG-dTS with **TS, dTS, dOTS, REXP3, Dynamic TS, and Beta-SWTS** over
-smooth drift, abrupt shifts, mixed dynamics, and stochastic switching
-($K=4$, $T=5000$). The metric is cumulative dynamic-oracle mean reward minus
-realized reward, divided by the horizon and averaged over rollouts; lower is
-better.
+We evaluate **four arms over 5,000 rounds**, averaging over **1,000 rollouts** on
+each fixed environment realization. The suite spans smooth drift, abrupt shifts,
+mixed dynamics, and stochastic switching. Baselines are TS, dTS, dOTS, REXP3,
+Dynamic TS, and Beta-SWTS. Normalized regret is cumulative dynamic-oracle mean
+reward minus realized reward, divided by the horizon; **lower is better**.
 
-**Regret over time.** With fixed parameters, VG-dTS has the lowest final
-normalized regret in these four of the eight environments. Its largest lead
-over the next-best method is in abrupt changes: **20.2% below dOTS**.
+### Adaptation over time
 
-![Normalized regret over all 5000 rounds for the four fixed-parameter environments where VG-dTS finishes best, showing all seven policies and averages over 1000 rollouts.](docs/figures/fixed_parameter_regret.png)
+With one fixed parameter setting per method across environments, VG-dTS attains
+the lowest final regret in four of the eight environments. In abrupt changes,
+its final regret is **20.2% below the next-best method, dOTS**.
 
-**Tuned per environment.** VG-dTS achieves average normalized regret **0.1047**,
-compared with **0.1200** for dTS and **0.1067** for dOTS.
+<p align="center">
+  <a href="docs/figures/fixed_parameter_regret.png">
+    <img src="docs/figures/fixed_parameter_regret.png" width="100%" alt="Normalized regret curves for fast periodic drift, abrupt changes, global switching, and per-arm switching, with all seven policies shown over 5,000 rounds.">
+  </a>
+</p>
 
-![Tuned final normalized regret across eight environments and seven policies.](report/ECE_270_Project_Publication/optimized_heatmap_8env_7policies.png)
+*Figure 1. Selected fixed-parameter wins. All seven methods, the full horizon,
+and unsmoothed averages over 1,000 rollouts are shown. VG-dTS is highlighted in
+green; these are the four environments where it finishes with the lowest regret.*
 
-**Fixed across environments.** VG-dTS achieves **0.1351** average normalized
-regret: **33.5% lower than dTS** and **24.2% lower than dOTS** under the reported
-fixed settings.
+### Performance across the full suite
 
-![Fixed-parameter final normalized regret across the same eight environments.](report/ECE_270_Project_Publication/fixed_params_heatmap_8env_7policies.png)
+VG-dTS achieves the best eight-environment average in both protocols. Against
+dTS and dOTS, its fixed-parameter average is **33.5%** and **24.2%** lower,
+respectively.
 
-These are suite averages, not wins in every environment. Surprise is an indirect
-signal of change: random switching can favor other methods, and the
-pure-random-signal control leaves little room for any method to improve.
+| Evaluation protocol | **VG-dTS** | dTS | dOTS |
+| :--- | ---: | ---: | ---: |
+| Tuned per environment | **0.1047** | 0.1200 | 0.1067 |
+| Fixed across environments | **0.1351** | 0.2031 | 0.1781 |
 
-## Run it
+*Table 1. Mean final normalized regret across all eight environments, comparing
+VG-dTS with the two fixed-discount TS variants. The heatmaps below include all
+seven methods.*
 
-Use **Python 3.12** and the pinned dependencies; NumPy 2.x changes the breakpoint
+<table>
+  <tr>
+    <th align="center">Tuned per environment</th>
+    <th align="center">Fixed across environments</th>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="report/ECE_270_Project_Publication/optimized_heatmap_8env_7policies.png">
+        <img src="report/ECE_270_Project_Publication/optimized_heatmap_8env_7policies.png" width="100%" alt="Tuned final normalized regret across eight environments and seven policies.">
+      </a>
+    </td>
+    <td width="50%" valign="top">
+      <a href="report/ECE_270_Project_Publication/fixed_params_heatmap_8env_7policies.png">
+        <img src="report/ECE_270_Project_Publication/fixed_params_heatmap_8env_7policies.png" width="100%" alt="Fixed-parameter final normalized regret across the same eight environments and seven policies.">
+      </a>
+    </td>
+  </tr>
+</table>
+
+*Figure 2. Final normalized regret across the complete benchmark suite. Select
+either panel to inspect the full-resolution figure.*
+
+**Scope of the evidence.** The average advantage does not imply a win in every
+regime. Surprise is an indirect signal of change, other methods lead in several
+environments, and the pure-random-signal control leaves little room for
+improvement. See the [methodological notes](REPRODUCIBILITY.md#details-the-manuscript-should-clarify-before-publication)
+for tuning budgets, gate settings, and the limits of these comparisons.
+
+## 3. Reproduce the results
+
+Use **Python 3.12** and the pinned dependencies. NumPy 2.x changes the breakpoint
 environment generated from the same seed.
+
+<details>
+<summary><strong>Installation and paper replay</strong></summary>
+
+Run from the repository root:
 
 ```sh
 python3.12 -m venv .venv
@@ -80,9 +145,17 @@ python -m project_publication --mode paper --workers 4
 python -m project_publication --mode verify
 ```
 
-This replays the archived hyperparameters with **1,000 evaluation runs** and
-writes figures, curves, and summaries to `artifacts/reproduction/`. Choose a new
-`--output-dir` if it already contains a run. All **119 reported evaluation
-values** were reproduced exactly during validation. Full retuning, a quick smoke
-test, manuscript compilation, and methodological caveats are documented in the
-[reproducibility guide](REPRODUCIBILITY.md).
+This replays archived hyperparameters with 1,000 evaluation runs and writes
+figures, curves, and summaries to `artifacts/reproduction/`. Choose a new
+`--output-dir` if it already contains a run. To regenerate Figure 1 afterward:
+
+```sh
+python -m project_publication.readme_figures
+```
+
+</details>
+
+All **119 reported evaluation values** were reproduced exactly during validation;
+this checks evaluation at the archived settings, not a new tuning search.
+[Full instructions](REPRODUCIBILITY.md) cover retuning, smoke tests, figure
+regeneration, manuscript compilation, and the validation record.
