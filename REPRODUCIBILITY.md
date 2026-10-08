@@ -142,10 +142,10 @@ sh artifacts/rebuilt-paper/build.sh
 - `project_publication/reproduce.py`: replay, retuning, persisted results, and checks.
 - `tests/`: algorithm, environment, archival-integrity, and integration checks.
 
-The cleanup preserves the manuscript text and its results. Scientific interpretation issues are listed below. No project-wide
-software license was present in the inherited repository; the authors should
-choose one before advertising permission to reuse the code. Bundled third-party
-LaTeX files retain their own notices.
+The cleanup preserves the manuscript text and its results. Scientific
+interpretation issues are listed below. Original project content is licensed
+under the [Apache License 2.0](LICENSE). Bundled third-party LaTeX styles retain
+their upstream terms and notices; see [NOTICE](NOTICE).
 
 ## What was preserved and recovered
 

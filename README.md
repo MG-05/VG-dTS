@@ -159,3 +159,9 @@ All **119 reported evaluation values** were reproduced exactly during validation
 this checks evaluation at the archived settings, not a new tuning search.
 [Full instructions](REPRODUCIBILITY.md) cover retuning, smoke tests, figure
 regeneration, manuscript compilation, and the validation record.
+
+## License
+
+Original project content is licensed under the [Apache License 2.0](LICENSE).
+Bundled third-party LaTeX styles retain their upstream terms; see [NOTICE](NOTICE)
+and the notices in those files.
